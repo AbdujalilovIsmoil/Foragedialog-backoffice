@@ -1,0 +1,1 @@
+# Foragedialog - Admin Panel
