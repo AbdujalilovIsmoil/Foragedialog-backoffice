@@ -19,36 +19,38 @@ const siderStyle: React.CSSProperties = {
   scrollbarGutter: "stable",
 };
 
-const navItems = [
-  {
-    id: 1,
-    path: "/",
-    icon: HomeOutlined,
-    label: "Bosh sahifa",
-  },
-  {
-    id: 2,
-    path: "/pages/news",
-    label: "Yangiliklar",
-    icon: NotificationOutlined,
-  },
-  {
-    id: 3,
-    label: "Maqolalar",
-    icon: FileTextOutlined,
-    path: "/pages/articles",
-  },
-  {
-    id: 4,
-    label: "Sozlamalar",
-    icon: SettingOutlined,
-    path: "/pages/settings",
-  },
-];
-
 function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const lang: string = location.pathname.split("/")[1];
+  const pathName = location.pathname.split("/").slice(2).join("/");
+
+  const navItems = [
+    {
+      id: 1,
+      path: "/",
+      icon: HomeOutlined,
+      label: "Bosh sahifa",
+    },
+    {
+      id: 2,
+      path: `/pages/news`,
+      label: "Yangiliklar",
+      icon: NotificationOutlined,
+    },
+    {
+      id: 3,
+      label: "Maqolalar",
+      icon: FileTextOutlined,
+      path: `/pages/articles`,
+    },
+    {
+      id: 4,
+      label: "Sozlamalar",
+      icon: SettingOutlined,
+      path: `/pages/settings`,
+    },
+  ];
 
   const renderNavItems = navItems.map((el) => {
     return {
@@ -63,33 +65,26 @@ function Layout() {
   } = theme.useToken();
 
   const onSelect = (key: string) => {
+    const connectPathName = lang.concat(navItems[Number(key) - 1].path);
+
     navigate({
-      pathname: navItems[Number(key) - 1].path,
+      pathname: `/${connectPathName}`,
     });
   };
 
-  const findId = navItems.find((el) => el.path === location.pathname);
+  const findId = navItems.find((el) => `${el.path}` === `/${pathName}`);
 
   return (
     <>
       <AntdLayout hasSider>
-        <AntdLayout.Sider
-          breakpoint="md"
-          style={siderStyle}
-          onBreakpoint={(broken) => {
-            console.log(broken);
-          }}
-          onCollapse={(collapsed, type) => {
-            console.log(collapsed, type);
-          }}
-        >
+        <AntdLayout.Sider breakpoint="md" style={siderStyle}>
           <Menu
             theme="dark"
             mode="vertical"
             items={renderNavItems}
             style={{ flex: 1, fontSize: "16px" }}
-            defaultSelectedKeys={[String(findId?.id)]}
             onSelect={(info) => onSelect(info.key)}
+            defaultSelectedKeys={[String(findId?.id)]}
           />
         </AntdLayout.Sider>
         <AntdLayout>

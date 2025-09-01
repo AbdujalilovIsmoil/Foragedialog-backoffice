@@ -1,5 +1,5 @@
-import { Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Suspense, useEffect, useState } from "react";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   News,
@@ -12,21 +12,36 @@ import {
 } from "./pages";
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const lang: string = location.pathname.split("/")[1];
+  const [correctLang, setCorrectLang] = useState<string>("uz");
+
+  useEffect(() => {
+    if (lang === "") navigate("uz");
+
+    if (lang === "uz" || lang === "ru" || lang === "en") setCorrectLang(lang);
+  }, [lang]);
+
   return (
     <Suspense>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/pages/news" element={<News />} />
-            <Route path="/pages/profile" element={<Profile />} />
-            <Route path="/pages/articles" element={<Articles />} />
-            <Route path="/pages/settings" element={<Settings />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-          <Route path="auth/sign-in" element={<SignIn />} />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route path={`/${correctLang}`} element={<Layout />}>
+          <Route path={`/${correctLang}`} element={<Home />} />
+          <Route path={`/${correctLang}/pages/news`} element={<News />} />
+          <Route path={`/${correctLang}/pages/profile`} element={<Profile />} />
+          <Route
+            element={<Articles />}
+            path={`/${correctLang}/pages/articles`}
+          />
+          <Route
+            element={<Settings />}
+            path={`/${correctLang}/pages/settings`}
+          />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+        <Route path="auth/sign-in" element={<SignIn />} />
+      </Routes>
     </Suspense>
   );
 }
