@@ -4,6 +4,7 @@ const Home = lazy(() => import("./Home"));
 const News = lazy(() => import("./News"));
 const Layout = lazy(() => import("./Layout"));
 const Profile = lazy(() => import("./Profile"));
+const Resource = lazy(() => import("./Resource"));
 const Settings = lazy(() => import("./Settings"));
 const Articles = lazy(() => import("./Articles"));
 const Category = lazy(() => import("./Category"));
@@ -16,6 +17,7 @@ export {
   SignIn,
   Layout,
   Profile,
+  Resource,
   NotFound,
   Settings,
   Articles,

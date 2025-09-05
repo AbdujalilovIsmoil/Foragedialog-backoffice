@@ -1,5 +1,6 @@
 import {
   HomeOutlined,
+  FundOutlined,
   SettingOutlined,
   FileTextOutlined,
   NotificationOutlined,
@@ -7,6 +8,7 @@ import {
 
 export {
   HomeOutlined,
+  FundOutlined,
   SettingOutlined,
   FileTextOutlined,
   NotificationOutlined,

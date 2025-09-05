@@ -3,6 +3,7 @@ import { Layout as AntdLayout, Menu, theme } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   HomeOutlined,
+  FundOutlined,
   SettingOutlined,
   FileTextOutlined,
   NotificationOutlined,
@@ -40,18 +41,24 @@ function Layout() {
     },
     {
       id: 3,
+      label: "Resurslar",
+      icon: FundOutlined,
+      path: "/pages/resource",
+    },
+    {
+      id: 4,
       label: "Categoriyalar",
       path: `/pages/category`,
       icon: NotificationOutlined,
     },
     {
-      id: 4,
+      id: 5,
       label: "Maqolalar",
       icon: FileTextOutlined,
       path: `/pages/articles`,
     },
     {
-      id: 5,
+      id: 6,
       label: "Sozlamalar",
       icon: SettingOutlined,
       path: `/pages/settings`,

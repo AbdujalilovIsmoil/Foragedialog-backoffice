@@ -11,6 +11,7 @@ import {
   Settings,
   Articles,
   Category,
+  Resource,
 } from "./pages";
 
 function App() {
@@ -38,6 +39,10 @@ function App() {
           <Route
             element={<Category />}
             path={`/${correctLang}/pages/category`}
+          />
+          <Route
+            element={<Resource />}
+            path={`/${correctLang}/pages/resource`}
           />
           <Route
             element={<Articles />}
