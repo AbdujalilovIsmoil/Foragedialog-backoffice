@@ -5,7 +5,6 @@ import {
   TagOutlined,
   HomeOutlined,
   FundOutlined,
-  DatabaseOutlined,
   NotificationOutlined,
 } from "@/assets/antd-design-icons";
 
@@ -63,12 +62,6 @@ function Layout() {
     //   icon: FileTextOutlined,
     //   path: `/pages/articles`,
     // },
-    {
-      id: 5,
-      label: "Statistika",
-      icon: DatabaseOutlined,
-      path: `/pages/statistics`,
-    },
     // {
     //   id: 6,
     //   label: "Settings",

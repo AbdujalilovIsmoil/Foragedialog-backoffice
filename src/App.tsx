@@ -13,7 +13,6 @@ import {
   Articles,
   Category,
   Resource,
-  Statistics,
 } from "./pages";
 
 function App() {
@@ -47,10 +46,6 @@ function App() {
             path={`/${correctLang}/pages/resource`}
           />
           <Route element={<Tags />} path={`/${correctLang}/pages/tags`} />
-          <Route
-            element={<Statistics />}
-            path={`/${correctLang}/pages/statistics`}
-          />
           <Route
             element={<Articles />}
             path={`/${correctLang}/pages/articles`}
