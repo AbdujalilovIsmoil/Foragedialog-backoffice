@@ -5,8 +5,6 @@ import {
   TagOutlined,
   HomeOutlined,
   FundOutlined,
-  SettingOutlined,
-  FileTextOutlined,
   DatabaseOutlined,
   NotificationOutlined,
 } from "@/assets/antd-design-icons";
@@ -35,48 +33,48 @@ function Layout() {
       icon: HomeOutlined,
       label: "Bosh sahifa",
     },
+    // {
+    //   id: 2,
+    //   path: `/pages/news`,
+    //   label: "Yangiliklar",
+    //   icon: NotificationOutlined,
+    // },
     {
       id: 2,
-      path: `/pages/news`,
-      label: "Yangiliklar",
-      icon: NotificationOutlined,
+      icon: FundOutlined,
+      path: "/pages/resource",
+      label: "Resurs kategoriya",
     },
     {
       id: 3,
-      label: "Resurslar",
-      icon: FundOutlined,
-      path: "/pages/resource",
-    },
-    {
-      id: 4,
-      label: "Categoriyalar",
+      label: "News categoriya",
       path: `/pages/category`,
       icon: NotificationOutlined,
     },
     {
-      id: 5,
-      label: "Taglar",
+      id: 4,
+      label: "Blog taglar",
       icon: TagOutlined,
       path: "/pages/tags",
     },
+    // {
+    //   id: 5,
+    //   label: "Maqolalar",
+    //   icon: FileTextOutlined,
+    //   path: `/pages/articles`,
+    // },
     {
-      id: 6,
-      label: "Maqolalar",
-      icon: FileTextOutlined,
-      path: `/pages/articles`,
-    },
-    {
-      id: 7,
+      id: 5,
       label: "Statistika",
       icon: DatabaseOutlined,
       path: `/pages/statistics`,
     },
-    {
-      id: 8,
-      label: "Sozlamalar",
-      icon: SettingOutlined,
-      path: `/pages/settings`,
-    },
+    // {
+    //   id: 6,
+    //   label: "Settings",
+    //   icon: SettingOutlined,
+    //   path: `/pages/settings`,
+    // },
   ];
 
   const renderNavItems = navItems.map((el) => {

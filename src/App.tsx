@@ -46,10 +46,7 @@ function App() {
             element={<Resource />}
             path={`/${correctLang}/pages/resource`}
           />
-          <Route
-            element={<Tags />}
-            path={`/${correctLang}/pages/tags`}
-          />
+          <Route element={<Tags />} path={`/${correctLang}/pages/tags`} />
           <Route
             element={<Statistics />}
             path={`/${correctLang}/pages/statistics`}

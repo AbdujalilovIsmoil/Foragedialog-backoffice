@@ -5,6 +5,7 @@ import {
   SettingOutlined,
   FileTextOutlined,
   DatabaseOutlined,
+  FileSyncOutlined,
   NotificationOutlined,
 } from "@ant-design/icons";
 
@@ -14,6 +15,7 @@ export {
   FundOutlined,
   SettingOutlined,
   DatabaseOutlined,
+  FileSyncOutlined,
   FileTextOutlined,
   NotificationOutlined,
 };
