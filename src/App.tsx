@@ -1,3 +1,4 @@
+import { storage } from "./services";
 import { Suspense, useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -9,15 +10,19 @@ import {
   NotFound,
   Settings,
   Articles,
+  Category,
 } from "./pages";
 
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const token = JSON.parse(storage.get("data") as string);
   const lang: string = location.pathname.split("/")[1];
   const [correctLang, setCorrectLang] = useState<string>("uz");
 
   useEffect(() => {
+    if (!token) navigate(`${correctLang}/pages/sign-in`);
+
     if (lang === "") navigate("uz");
 
     if (lang === "uz" || lang === "ru" || lang === "en") setCorrectLang(lang);
@@ -31,6 +36,10 @@ function App() {
           <Route path={`/${correctLang}/pages/news`} element={<News />} />
           <Route path={`/${correctLang}/pages/profile`} element={<Profile />} />
           <Route
+            element={<Category />}
+            path={`/${correctLang}/pages/category`}
+          />
+          <Route
             element={<Articles />}
             path={`/${correctLang}/pages/articles`}
           />
@@ -40,7 +49,7 @@ function App() {
           />
         </Route>
         <Route path="*" element={<NotFound />} />
-        <Route path="auth/sign-in" element={<SignIn />} />
+        <Route path={`${correctLang}/pages/sign-in`} element={<SignIn />} />
       </Routes>
     </Suspense>
   );

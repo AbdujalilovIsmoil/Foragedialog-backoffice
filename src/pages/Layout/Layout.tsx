@@ -40,12 +40,18 @@ function Layout() {
     },
     {
       id: 3,
+      label: "Categoriyalar",
+      path: `/pages/category`,
+      icon: NotificationOutlined,
+    },
+    {
+      id: 4,
       label: "Maqolalar",
       icon: FileTextOutlined,
       path: `/pages/articles`,
     },
     {
-      id: 4,
+      id: 5,
       label: "Sozlamalar",
       icon: SettingOutlined,
       path: `/pages/settings`,
