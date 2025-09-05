@@ -7,6 +7,7 @@ import {
   FundOutlined,
   SettingOutlined,
   FileTextOutlined,
+  DatabaseOutlined,
   NotificationOutlined,
 } from "@/assets/antd-design-icons";
 
@@ -66,6 +67,12 @@ function Layout() {
     },
     {
       id: 7,
+      label: "Statistika",
+      icon: DatabaseOutlined,
+      path: `/pages/statistics`,
+    },
+    {
+      id: 8,
       label: "Sozlamalar",
       icon: SettingOutlined,
       path: `/pages/settings`,
