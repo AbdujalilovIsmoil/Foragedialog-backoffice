@@ -2,6 +2,7 @@ import { lazy } from "react";
 
 const Home = lazy(() => import("./Home"));
 const News = lazy(() => import("./News"));
+const Tags = lazy(() => import("./Tags"));
 const Layout = lazy(() => import("./Layout"));
 const Profile = lazy(() => import("./Profile"));
 const Resource = lazy(() => import("./Resource"));
@@ -14,6 +15,7 @@ const SignIn = lazy(() => import("./Auth/Sign-In"));
 export {
   Home,
   News,
+  Tags,
   SignIn,
   Layout,
   Profile,

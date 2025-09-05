@@ -2,6 +2,7 @@ import { Layout as LayoutStyles } from "@/assets/styles";
 import { Layout as AntdLayout, Menu, theme } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  TagOutlined,
   HomeOutlined,
   FundOutlined,
   SettingOutlined,
@@ -53,12 +54,18 @@ function Layout() {
     },
     {
       id: 5,
+      label: "Taglar",
+      icon: TagOutlined,
+      path: "/pages/tags",
+    },
+    {
+      id: 6,
       label: "Maqolalar",
       icon: FileTextOutlined,
       path: `/pages/articles`,
     },
     {
-      id: 6,
+      id: 7,
       label: "Sozlamalar",
       icon: SettingOutlined,
       path: `/pages/settings`,

@@ -4,6 +4,7 @@ import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   News,
+  Tags,
   Layout,
   SignIn,
   Profile,
@@ -43,6 +44,10 @@ function App() {
           <Route
             element={<Resource />}
             path={`/${correctLang}/pages/resource`}
+          />
+          <Route
+            element={<Tags />}
+            path={`/${correctLang}/pages/tags`}
           />
           <Route
             element={<Articles />}

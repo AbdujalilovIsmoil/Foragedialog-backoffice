@@ -1,4 +1,5 @@
 import {
+  TagOutlined,
   HomeOutlined,
   FundOutlined,
   SettingOutlined,
@@ -7,6 +8,7 @@ import {
 } from "@ant-design/icons";
 
 export {
+  TagOutlined,
   HomeOutlined,
   FundOutlined,
   SettingOutlined,
