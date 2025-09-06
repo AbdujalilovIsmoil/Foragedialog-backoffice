@@ -194,6 +194,12 @@ function Layout() {
           path: "/pages/our-valued-clients",
           icon: UserOutlined,
         },
+        {
+          id: "5-6",
+          label: "Our Resource",
+          icon: DatabaseOutlined,
+          path: "/pages/our-resource",
+        },
       ],
     },
   ];
