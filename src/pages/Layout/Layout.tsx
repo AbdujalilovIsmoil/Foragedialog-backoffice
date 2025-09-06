@@ -98,15 +98,15 @@ function Layout() {
     { id: 1, path: "/", icon: HomeOutlined, label: "Bosh sahifa" },
     {
       id: 2,
-      icon: FundOutlined,
-      path: "/pages/resource",
-      label: "Resurs kategoriya",
-    },
-    {
-      id: 3,
       label: "News categoriya",
       path: `/pages/category`,
       icon: NotificationOutlined,
+    },
+    {
+      id: 3,
+      icon: FundOutlined,
+      path: "/pages/resource",
+      label: "Resurs kategoriya",
     },
     { id: 4, label: "Blog taglar", icon: TagOutlined, path: "/pages/tags" },
   ];
