@@ -2,7 +2,21 @@ import { storage } from "@/services";
 import { Button } from "@/components";
 import { SiteLogo } from "@/assets/images";
 import { Layout as LayoutStyles } from "@/assets/styles";
-import { LogoutOutlined, UserOutlined, BulbOutlined } from "@ant-design/icons";
+import {
+  LogoutOutlined,
+  UserOutlined,
+  BulbOutlined,
+  HomeOutlined,
+  NotificationOutlined,
+  DatabaseOutlined,
+  ReadOutlined,
+  TeamOutlined,
+  TagsOutlined,
+  SolutionOutlined,
+  FileTextOutlined,
+  ApartmentOutlined,
+  CrownOutlined,
+} from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Layout as AntdLayout,
@@ -15,12 +29,6 @@ import {
   ConfigProvider,
   Image,
 } from "antd";
-import {
-  TagOutlined,
-  HomeOutlined,
-  FundOutlined,
-  NotificationOutlined,
-} from "@/assets/antd-design-icons";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useState } from "react";
@@ -41,9 +49,7 @@ const ProfileMenu = () => {
 
   const handleMenuClick = ({ key }: { key: string }) => {
     if (key === "profile") {
-      navigate({
-        pathname: "/uz/pages/profile",
-      });
+      navigate({ pathname: "/uz/pages/profile" });
     } else if (key === "logout") {
       storage.clear();
       navigate("/uz/pages/sign-in");
@@ -94,26 +100,120 @@ function Layout() {
 
   const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
 
+  // 🔹 Sidebar menu
   const navItems = [
     { id: 1, path: "/", icon: HomeOutlined, label: "Bosh sahifa" },
+
     {
       id: 2,
-      label: "News categoriya",
-      path: `/pages/category`,
+      label: "News Management",
       icon: NotificationOutlined,
+      children: [
+        {
+          id: "2-1",
+          label: "News Category",
+          path: "/pages/news-category",
+          icon: FileTextOutlined,
+        },
+        {
+          id: "2-2",
+          label: "News",
+          path: "/pages/news",
+          icon: NotificationOutlined,
+        },
+      ],
     },
+
     {
       id: 3,
-      icon: FundOutlined,
-      path: "/pages/resource",
-      label: "Resurs kategoriya",
+      label: "Resources",
+      icon: DatabaseOutlined,
+      children: [
+        {
+          id: "3-1",
+          label: "Resource Category",
+          path: "/pages/resource-category",
+          icon: FileTextOutlined,
+        },
+        {
+          id: "3-2",
+          label: "Resource",
+          path: "/pages/resource",
+          icon: DatabaseOutlined,
+        },
+      ],
     },
-    { id: 4, label: "Blog taglar", icon: TagOutlined, path: "/pages/tags" },
+
+    {
+      id: 4,
+      label: "Blog",
+      icon: ReadOutlined,
+      children: [
+        { id: "4-1", label: "Tags", path: "/pages/tags", icon: TagsOutlined },
+        {
+          id: "4-2",
+          label: "Publishers",
+          path: "/pages/publisher",
+          icon: SolutionOutlined,
+        },
+      ],
+    },
+
+    {
+      id: 5,
+      label: "Our Team",
+      icon: TeamOutlined,
+      children: [
+        {
+          id: "5-1",
+          label: "Our Category",
+          path: "/pages/our-category",
+          icon: ApartmentOutlined,
+        },
+        {
+          id: "5-2",
+          label: "Our Team",
+          path: "/pages/our-team",
+          icon: TeamOutlined,
+        },
+        {
+          id: "5-3",
+          label: "Our Services",
+          path: "/pages/our-services",
+          icon: SolutionOutlined,
+        },
+        {
+          id: "5-4",
+          label: "Our Partners",
+          path: "/pages/our-partners",
+          icon: CrownOutlined,
+        },
+        {
+          id: "5-5",
+          label: "Our Valued Clients",
+          path: "/pages/our-valued-clients",
+          icon: UserOutlined,
+        },
+      ],
+    },
   ];
 
+  // 🔹 Render navItems (children bilan)
   const renderNavItems = navItems.map((el) => {
+    if (el.children) {
+      return {
+        key: String(el.id),
+        label: el.label,
+        icon: <el.icon style={{ fontSize: "18px" }} />,
+        children: el.children.map((child) => ({
+          key: String(child.id),
+          label: child.label,
+          icon: <child.icon style={{ fontSize: "16px" }} />,
+        })),
+      };
+    }
     return {
-      key: el.id,
+      key: String(el.id),
       label: el.label,
       icon: <el.icon style={{ fontSize: "18px" }} />,
     };
@@ -123,9 +223,23 @@ function Layout() {
     token: { colorBgContainer = "white", borderRadiusLG },
   } = theme.useToken();
 
+  // 🔹 OnSelect — childlarni ham to‘g‘ri ochadi
   const onSelect = (key: string) => {
-    const connectPathName = lang.concat(navItems[Number(key) - 1].path);
-    navigate({ pathname: `/${connectPathName}` });
+    const findPath = (items: typeof navItems): string | undefined => {
+      for (const item of items) {
+        if (String(item.id) === key && item.path) return item.path;
+        if (item.children) {
+          const found = item.children.find((c) => String(c.id) === key);
+          if (found?.path) return found.path;
+        }
+      }
+    };
+
+    const targetPath = findPath(navItems);
+    if (targetPath) {
+      const connectPathName = lang.concat(targetPath);
+      navigate({ pathname: `/${connectPathName}` });
+    }
   };
 
   const dateFormat = "YYYY/MM/DD";
@@ -210,10 +324,15 @@ function Layout() {
         </AntdLayout.Header>
 
         <AntdLayout>
-          <AntdLayout.Sider theme="light" width={250} breakpoint="md" style={siderStyle}>
+          <AntdLayout.Sider
+            theme="light"
+            width={250}
+            breakpoint="md"
+            style={siderStyle}
+          >
             <Menu
               theme="light"
-              mode="vertical"
+              mode="inline"
               items={renderNavItems}
               style={{ flex: 1, fontSize: "16px" }}
               onSelect={(info) => onSelect(info.key)}
