@@ -214,7 +214,9 @@ const OurPartners: React.FC = () => {
     {
       title: "Picture",
       dataIndex: "picturePath",
-      render: (value) => value && <Image width={80} src={value} />,
+      render: (value) => {
+        return <Image width={80} src={value} />;
+      },
     },
     {
       title: "Edit",

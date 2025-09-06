@@ -4,6 +4,7 @@ const Home = lazy(() => import("./Home"));
 const News = lazy(() => import("./News"));
 const Tags = lazy(() => import("./Tags"));
 const Layout = lazy(() => import("./Layout"));
+const OurTeam = lazy(() => import("./OurTeam"));
 const Profile = lazy(() => import("./Profile"));
 const Resource = lazy(() => import("./Resource"));
 const Settings = lazy(() => import("./Settings"));
@@ -21,6 +22,7 @@ export {
   Tags,
   SignIn,
   Layout,
+  OurTeam,
   Profile,
   Resource,
   NotFound,

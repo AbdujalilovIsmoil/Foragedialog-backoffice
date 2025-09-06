@@ -16,6 +16,7 @@ import {
   OurCategory,
   OurPartners,
   OurResource,
+  OurTeam,
 } from "./pages";
 
 function App() {
@@ -51,6 +52,10 @@ function App() {
           <Route
             element={<OurCategory />}
             path={`/${correctLang}/pages/our-category`}
+          />
+          <Route
+            element={<OurTeam />}
+            path={`/${correctLang}/pages/our-team`}
           />
           <Route
             element={<OurPartners />}
