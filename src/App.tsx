@@ -13,6 +13,8 @@ import {
   Articles,
   Category,
   Resource,
+  OurCategory,
+  OurPartners,
 } from "./pages";
 
 function App() {
@@ -44,6 +46,14 @@ function App() {
           <Route
             element={<Resource />}
             path={`/${correctLang}/pages/resource`}
+          />
+          <Route
+            element={<OurCategory />}
+            path={`/${correctLang}/pages/our-category`}
+          />
+          <Route
+            element={<OurPartners />}
+            path={`/${correctLang}/pages/our-partners`}
           />
           <Route element={<Tags />} path={`/${correctLang}/pages/tags`} />
           <Route

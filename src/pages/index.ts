@@ -11,6 +11,8 @@ const Articles = lazy(() => import("./Articles"));
 const Category = lazy(() => import("./Category"));
 const NotFound = lazy(() => import("./Not-Found"));
 const SignIn = lazy(() => import("./Auth/Sign-In"));
+const OurCategory = lazy(() => import("./OurCategory"));
+const OurPartners = lazy(() => import("./OurPartners"));
 
 export {
   Home,
@@ -24,4 +26,6 @@ export {
   Settings,
   Articles,
   Category,
+  OurCategory,
+  OurPartners,
 };
