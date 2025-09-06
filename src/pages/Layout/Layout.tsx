@@ -32,7 +32,7 @@ const siderStyle: React.CSSProperties = {
   overflow: "auto",
   position: "sticky",
   insetInlineStart: 0,
-  scrollbarWidth: "thin",
+  scrollbarWidth: "revert",
   scrollbarGutter: "stable",
 };
 
@@ -120,7 +120,7 @@ function Layout() {
   });
 
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { colorBgContainer = "white", borderRadiusLG },
   } = theme.useToken();
 
   const onSelect = (key: string) => {
@@ -210,9 +210,9 @@ function Layout() {
         </AntdLayout.Header>
 
         <AntdLayout>
-          <AntdLayout.Sider breakpoint="md" style={siderStyle}>
+          <AntdLayout.Sider theme="light" width={250} breakpoint="md" style={siderStyle}>
             <Menu
-              theme="dark"
+              theme="light"
               mode="vertical"
               items={renderNavItems}
               style={{ flex: 1, fontSize: "16px" }}
