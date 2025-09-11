@@ -11,12 +11,15 @@ import {
   NotFound,
   Settings,
   Articles,
-  Category,
-  Resource,
+  NewsCategory,
+  ResourceCategory,
   OurCategory,
   OurPartners,
   OurResource,
   OurTeam,
+  Publisher,
+  Blog,
+  Recource,
 } from "./pages";
 
 function App() {
@@ -42,12 +45,20 @@ function App() {
           <Route path={`/${correctLang}/pages/news`} element={<News />} />
           <Route path={`/${correctLang}/pages/profile`} element={<Profile />} />
           <Route
-            element={<Category />}
-            path={`/${correctLang}/pages/category`}
+            element={<NewsCategory />}
+            path={`/${correctLang}/pages/news-category`}
           />
           <Route
-            element={<Resource />}
+            element={<ResourceCategory />}
+            path={`/${correctLang}/pages/resource-category`}
+          />
+          <Route
+            element={<Recource />}
             path={`/${correctLang}/pages/resource`}
+          />
+          <Route
+            element={<Publisher />}
+            path={`/${correctLang}/pages/publisher`}
           />
           <Route
             element={<OurCategory />}
@@ -57,6 +68,7 @@ function App() {
             element={<OurTeam />}
             path={`/${correctLang}/pages/our-team`}
           />
+          <Route element={<Blog />} path={`/${correctLang}/pages/blog`} />
           <Route
             element={<OurPartners />}
             path={`/${correctLang}/pages/our-partners`}

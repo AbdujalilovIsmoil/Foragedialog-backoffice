@@ -26,92 +26,24 @@ type ColumnsType<T extends object = object> = TableProps<T>["columns"];
 
 interface DataType {
   id: string | number;
-  name: {
-    uz: string;
-    ru: string;
-    en: string;
-    ger: string;
-  };
-  about: {
-    uz: string;
-    ru: string;
-    en: string;
-    ger: string;
-  };
+  name: { uz: string; ru: string; en: string; ger: string };
+  about: { uz: string; ru: string; en: string; ger: string };
   link: string;
   picturesId: string;
-  picturePath?: string; // backend qaytaradigan path
 }
+
+const API_URL =
+  import.meta.env.VITE_REACT_API_URL || "http://95.130.227.28:8080";
 
 const OurPartners: React.FC = () => {
   const [isPost, setIsPost] = useState(true);
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const lang = searchParams.get("lang") || "uz";
-  const current = searchParams.get("current");
+  const current = searchParams.get("current") || "1";
   const [currentLang, setCurrentLang] = useState(lang);
 
-  useEffect(() => {
-    if (!lang) {
-      setSearchParams({ lang: "uz", current: String(1) });
-    } else {
-      setSearchParams({ lang, current: String(current ? current : 1) });
-    }
-  }, []);
-
-  const { data, isLoading } = useGet({
-    queryKey: "ourPartners",
-    path: "/OurPartners/GetAll",
-  });
-
-  const mutationHook = isPost ? usePost : usePut;
-
-  const { mutate } = mutationHook({
-    queryKey: ["ourPartners"],
-    onSuccess: async () => onClose(),
-    path: `/OurPartners/${isPost ? "Create" : "Update"}`,
-    successText: `Success ${isPost ? "Create" : "Update"} Our Partner`,
-  });
-
-  const mutateDelete = useDelete({
-    queryKey: ["ourPartners"],
-    path: "/OurPartners/Delete",
-    successText: "Delete Partner",
-    onError: async (error: unknown) => {
-      if (error instanceof Error) {
-        toast.error(error.message, { pauseOnHover: false });
-      }
-    },
-  });
-
-  const onChange = (key: string) => {
-    setCurrentLang(key);
-    setSearchParams({
-      lang: key,
-      current: String(searchParams.get("current")),
-    });
-  };
-
-  const showDrawer = () => setOpen(true);
-
-  const onClose = () => {
-    setOpen(false);
-    setIsPost(true);
-    setFileList([]);
-  };
-
-  type DynamicValues<T extends object = {}> = {
-    id: string | number;
-  } & T;
-
-  const [values, setValues] = useState<
-    DynamicValues<{
-      name: Record<string, string>;
-      about: Record<string, string>;
-      link: string;
-      picturesId: string;
-    }>
-  >({
+  const [values, setValues] = useState({
     id: "",
     name: { uz: "", ru: "", en: "", ger: "" },
     about: { uz: "", ru: "", en: "", ger: "" },
@@ -121,67 +53,124 @@ const OurPartners: React.FC = () => {
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
 
+  // Tabs uchun onChange
+  const onChange = (key: string) => {
+    setCurrentLang(key);
+    setSearchParams({ lang: key, current: String(current) });
+  };
+
+  // Drawer va formni yopish
+  const onClose = () => {
+    setOpen(false);
+    setIsPost(true);
+    setFileList([]);
+    setValues({
+      id: "",
+      name: { uz: "", ru: "", en: "", ger: "" },
+      about: { uz: "", ru: "", en: "", ger: "" },
+      link: "",
+      picturesId: "",
+    });
+  };
+
+  useEffect(() => {
+    setSearchParams({ lang: currentLang, current: String(current) });
+  }, []);
+
+  const { data, isLoading } = useGet<DataType[]>({
+    queryKey: "ourPartners",
+    path: "/OurPartners/GetAll",
+  });
+
+  const mutationHook = isPost ? usePost : usePut;
+
+  const { mutate } = mutationHook({
+    queryKey: ["ourPartners"],
+    onSuccess: onClose,
+    path: `/OurPartners/${isPost ? "Create" : "Update"}`,
+    successText: `Success ${isPost ? "Create" : "Update"} Our Partner`,
+  });
+
+  const mutateDelete = useDelete({
+    queryKey: ["ourPartners"],
+    path: "/OurPartners/Delete",
+    successText: "Delete Partner",
+    onError: (error: unknown) => {
+      if (error instanceof Error)
+        toast.error(error.message, { pauseOnHover: false });
+    },
+  });
+
   const changeLanguage = (
     e: ChangeEvent<HTMLInputElement>,
     field: "name" | "about"
   ) => {
     const { value, name } = e.target;
-    setValues({
-      ...values,
-      [field]: {
-        ...values[field],
-        [name]: value,
-      },
-    });
+    setValues((prev) => ({
+      ...prev,
+      [field]: { ...prev[field], [name]: value },
+    }));
   };
 
-  // ✅ Upload hookdan foydalanamiz
+  // File upload
   const { mutate: uploadFile } = usePost({
     queryKey: ["uploadFile"],
     path: "/File/UploadFile",
     successText: "File uploaded successfully",
-    onSuccess: (uploaded: any) => {
-      setValues((prev) => ({
-        ...prev,
-        picturesId: uploaded.id,
-      }));
-
+    onSuccess: (response: any) => {
+      const uploaded = response.content;
+      setValues((prev) => ({ ...prev, picturesId: uploaded.id }));
       setFileList([
         {
           uid: uploaded.id,
           name: uploaded.fileName,
           status: "done",
-          url: uploaded.path,
+          url: `${
+            import.meta.env.VITE_REACT_API_URL
+          }/File/DownloadFile/download?id=${uploaded.id}`,
         },
       ]);
     },
+    onError: () => toast.error("Upload failed"),
   });
 
   const handleUpload = (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     uploadFile(formData);
-    return false; // prevent auto upload
+    return false;
   };
 
-  const openDrawData = (values: DataType) => {
-    showDrawer();
+  const showDrawer = () => {
+    setOpen(true);
+    setIsPost(true);
+    setValues({
+      id: "",
+      name: { uz: "", ru: "", en: "", ger: "" },
+      about: { uz: "", ru: "", en: "", ger: "" },
+      link: "",
+      picturesId: "",
+    });
+    setFileList([]);
+  };
+
+  const openDrawData = (row: DataType) => {
+    setOpen(true);
     setIsPost(false);
     setValues({
-      id: values.id,
-      name: { ...values.name },
-      about: { ...values.about },
-      link: values.link,
-      picturesId: values.picturesId,
+      id: row.id,
+      name: { ...row.name },
+      about: { ...row.about },
+      link: row.link,
+      picturesId: row.picturesId,
     });
-
-    if (values.picturePath) {
+    if (row.picturesId) {
       setFileList([
         {
-          uid: values.picturesId,
+          uid: row.picturesId,
           name: "image",
           status: "done",
-          url: values.picturePath,
+          url: `${API_URL}/File/DownloadFile/download?id=${row.picturesId}`,
         },
       ]);
     }
@@ -213,26 +202,34 @@ const OurPartners: React.FC = () => {
     },
     {
       title: "Picture",
-      dataIndex: "picturePath",
-      render: (value) => {
-        return <Image width={80} src={value} />;
-      },
+      dataIndex: "picturesId",
+      render: (_, record) =>
+        record.picturesId ? (
+          <Image
+            width={80}
+            src={`${
+              import.meta.env.VITE_REACT_API_URL
+            }/File/DownloadFile/download?id=${record.picturesId}`}
+          />
+        ) : (
+          <span>No Image</span>
+        ),
     },
     {
       title: "Edit",
-      render: (value) => (
-        <Button type="text" size="large" onClick={() => openDrawData(value)}>
+      render: (_, record) => (
+        <Button type="text" size="large" onClick={() => openDrawData(record)}>
           <EditOutlined style={{ color: "green" }} />
         </Button>
       ),
     },
     {
       title: "Delete",
-      render: ({ id }) => (
+      render: (_, record) => (
         <Button
           type="text"
           size="large"
-          onClick={() => mutateDelete.mutate(id)}
+          onClick={() => mutateDelete.mutate(record.id)}
         >
           <DeleteOutlined style={{ color: "red" }} />
         </Button>
@@ -250,12 +247,7 @@ const OurPartners: React.FC = () => {
   return (
     <div>
       <Row justify="space-between" style={{ marginBottom: 16 }}>
-        <Tabs
-          items={items}
-          onChange={onChange}
-          activeKey={currentLang}
-          defaultActiveKey={currentLang}
-        />
+        <Tabs items={items} onChange={onChange} activeKey={currentLang} />
         <Button type="primary" onClick={showDrawer}>
           Create
         </Button>
@@ -265,9 +257,7 @@ const OurPartners: React.FC = () => {
         columns={columns}
         dataSource={data}
         loading={isLoading}
-        pagination={{
-          current: Number(current || 1),
-        }}
+        pagination={{ current: Number(current) }}
         rowKey={(record) => record.id}
         onChange={(e) => setSearchParams({ lang, current: String(e.current) })}
       />
@@ -277,49 +267,33 @@ const OurPartners: React.FC = () => {
         open={open}
         onClose={onClose}
         title={isPost ? "Create Partner" : "Update Partner"}
-        styles={{ body: { paddingBottom: 80 } }}
+        bodyStyle={{ paddingBottom: 80 }}
       >
-        <Tabs
-          items={items}
-          onChange={onChange}
-          activeKey={currentLang}
-          defaultActiveKey={currentLang}
-        />
-
+        <Tabs items={items} onChange={onChange} activeKey={currentLang} />
         <Form layout="vertical" onFinish={() => mutate(values)}>
           <Row gutter={16}>
             <Col span={24}>
-              <Form.Item
-                label="Name"
-                name={`name-${currentLang}`}
-                rules={[{ required: true }]}
-              >
+              <Form.Item label="Name" rules={[{ required: true }]}>
                 <Input
                   name={currentLang}
+                  value={values.name[currentLang]}
                   onChange={(e) => changeLanguage(e, "name")}
                   placeholder="Enter name"
-                  value={values.name[currentLang]}
                 />
               </Form.Item>
             </Col>
-
             <Col span={24}>
-              <Form.Item
-                label="About"
-                name={`about-${currentLang}`}
-                rules={[{ required: true }]}
-              >
+              <Form.Item label="About" rules={[{ required: true }]}>
                 <Input
                   name={currentLang}
+                  value={values.about[currentLang]}
                   onChange={(e) => changeLanguage(e, "about")}
                   placeholder="Enter about"
-                  value={values.about[currentLang]}
                 />
               </Form.Item>
             </Col>
-
             <Col span={24}>
-              <Form.Item label="Link" name="link" rules={[{ required: true }]}>
+              <Form.Item label="Link" rules={[{ required: true }]}>
                 <Input
                   value={values.link}
                   onChange={(e) =>
@@ -329,7 +303,6 @@ const OurPartners: React.FC = () => {
                 />
               </Form.Item>
             </Col>
-
             <Col span={24}>
               <Form.Item label="Upload Picture">
                 <Upload
@@ -346,7 +319,6 @@ const OurPartners: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-
           <Button type="primary" htmlType="submit">
             Submit
           </Button>

@@ -37,7 +37,6 @@ interface TeamMember {
 
 const BASE_URL = "http://95.130.227.28:8080";
 const DEFAULT_IMAGE = "https://via.placeholder.com/80?text=No+Image";
-
 const getFileUrl = (id?: string) =>
   id ? `${BASE_URL}/File/DownloadFile/download?id=${id}` : "";
 
@@ -50,12 +49,14 @@ const OurTeam: React.FC = () => {
   const [currentLang, setCurrentLang] = useState(lang);
 
   const [values, setValues] = useState<{
+    id?: string | number;
     name: Record<string, string>;
     role: Record<string, string>;
     about: Record<string, string>;
     experience: Record<string, string>;
     skills: Array<Record<string, string>>;
   }>({
+    id: undefined,
     name: { uz: "", ru: "", en: "", ger: "" },
     role: { uz: "", ru: "", en: "", ger: "" },
     about: { uz: "", ru: "", en: "", ger: "" },
@@ -71,26 +72,6 @@ const OurTeam: React.FC = () => {
     queryKey: "ourTeam",
     path: "/OurTeam/GetAll",
   });
-
-  const [filteredData, setFilteredData] = useState<TeamMember[]>([]);
-
-  // Ma'lumotlarni tilga qarab filtrlaymiz
-  useEffect(() => {
-    if (data && Array.isArray(data)) {
-      setFilteredData(
-        data.map((item: TeamMember) => ({
-          ...item,
-          name: { [currentLang]: item.name[currentLang] },
-          role: { [currentLang]: item.role[currentLang] },
-          about: { [currentLang]: item.about[currentLang] },
-          experience: { [currentLang]: item.experience[currentLang] },
-          skills: item.skills.map((skill) => ({
-            [currentLang]: skill[currentLang],
-          })),
-        }))
-      );
-    }
-  }, [data, currentLang]);
 
   const mutationHook = isPost ? usePost : usePut;
   const { mutate } = mutationHook({
@@ -140,25 +121,30 @@ const OurTeam: React.FC = () => {
     return false;
   };
 
-  const openDrawData = (record: TeamMember) => {
-    setIsPost(false);
-    setValues({
-      name: { ...record.name },
-      role: { ...record.role },
-      about: { ...record.about },
-      experience: { ...record.experience },
-      skills: record.skills.length
-        ? [...record.skills]
-        : [{ uz: "", ru: "", en: "", ger: "" }],
-    });
-    setUploadedPictureId(record.picturesId || "");
+  // Drawer open qilish (create/update)
+  const openDrawData = (record?: TeamMember) => {
+    if (record) {
+      setIsPost(false);
+      setValues({
+        id: record.id,
+        name: { ...record.name },
+        role: { ...record.role },
+        about: { ...record.about },
+        experience: { ...record.experience },
+        skills: record.skills.length
+          ? [...record.skills]
+          : [{ uz: "", ru: "", en: "", ger: "" }],
+      });
+      setUploadedPictureId(record.picturesId || "");
+      const url = getFileUrl(record.picturesId);
+      setPreviewImage(url || DEFAULT_IMAGE);
+      setUploadedFileList([
+        { uid: record.picturesId || "1", name: "picture", status: "done", url },
+      ]);
+    } else {
+      setIsPost(true);
+    }
     setOpen(true);
-
-    const url = getFileUrl(record.picturesId);
-    setPreviewImage(url || DEFAULT_IMAGE);
-    setUploadedFileList([
-      { uid: record.picturesId || "1", name: "picture", status: "done", url },
-    ]);
   };
 
   const onClose = () => {
@@ -168,6 +154,7 @@ const OurTeam: React.FC = () => {
     setPreviewImage(DEFAULT_IMAGE);
     setUploadedPictureId("");
     setValues({
+      id: undefined,
       name: { uz: "", ru: "", en: "", ger: "" },
       role: { uz: "", ru: "", en: "", ger: "" },
       about: { uz: "", ru: "", en: "", ger: "" },
@@ -286,14 +273,14 @@ const OurTeam: React.FC = () => {
           activeKey={currentLang}
           defaultActiveKey={currentLang}
         />
-        <Button type="primary" onClick={() => setOpen(true)}>
+        <Button type="primary" onClick={() => openDrawData()}>
           Create
         </Button>
       </Row>
 
       <Table<TeamMember>
         columns={columns}
-        dataSource={filteredData}
+        dataSource={data}
         loading={isLoading}
         pagination={{ current: Number(current) }}
         rowKey={(record) => record.id}
@@ -320,14 +307,12 @@ const OurTeam: React.FC = () => {
                 <Input
                   name={currentLang}
                   value={
-                    field !== "skills"
-                      ? (
-                          values[field as keyof typeof values] as Record<
-                            string,
-                            string
-                          >
-                        )[currentLang]
-                      : ""
+                    (
+                      values[field as keyof typeof values] as Record<
+                        string,
+                        string
+                      >
+                    )[currentLang]
                   }
                   onChange={(e) => changeField(e, field as keyof typeof values)}
                   placeholder={`Enter ${field}`}

@@ -31,6 +31,7 @@ interface DataType {
   description: Record<string, string>;
   fileId?: string;
   fileName?: string;
+  filePath?: string;
 }
 
 const BASE_URL = "http://95.130.227.28:8080";
@@ -55,7 +56,7 @@ const getFileUrl = (id?: string) => {
 const getFileIcon = (fileName?: string, fileUrl?: string) => {
   if (!fileUrl) return DEFAULT_IMAGE;
   const ext = fileName?.split(".").pop()?.toLowerCase() || "";
-  if (ext.match(/(jpeg|jpg|png|gif)$/)) return fileUrl; // rasm
+  if (ext.match(/(jpeg|jpg|png|gif)$/)) return fileUrl; // agar rasm bo‘lsa
   return fileTypeIcons[ext] || DEFAULT_IMAGE; // icon
 };
 
@@ -63,16 +64,19 @@ const OurResources: React.FC = () => {
   const [isPost, setIsPost] = useState(true);
   const [open, setOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const lang = searchParams.get("lang") || "uz";
+  const currentLang = searchParams.get("lang") || "uz";
   const current = searchParams.get("current");
-  const [currentLang, setCurrentLang] = useState(lang);
 
   const [values, setValues] = useState<{
+    id?: string | number;
     title: Record<string, string>;
     description: Record<string, string>;
+    filePath?: string;
   }>({
+    id: undefined,
     title: { uz: "", ru: "", en: "", ger: "" },
     description: { uz: "", ru: "", en: "", ger: "" },
+    filePath: "",
   });
 
   const [uploadedFileId, setUploadedFileId] = useState<string>("");
@@ -123,6 +127,7 @@ const OurResources: React.FC = () => {
           url,
         },
       ]);
+      setValues((prev) => ({ ...prev, filePath: url }));
     },
   });
 
@@ -145,13 +150,15 @@ const OurResources: React.FC = () => {
   const openDrawData = (record: DataType) => {
     setIsPost(false);
     setValues({
+      id: record.id,
       title: { ...record.title },
       description: { ...record.description },
+      filePath: record.filePath || getFileUrl(record.fileId),
     });
     setUploadedFileId(record.fileId || "");
     setOpen(true);
 
-    const url = getFileUrl(record.fileId);
+    const url = record.filePath || getFileUrl(record.fileId);
     setPreviewImage(getFileIcon(record.fileName, url));
     setFileList([
       {
@@ -168,8 +175,10 @@ const OurResources: React.FC = () => {
     setIsPost(true);
     setFileList([]);
     setValues({
+      id: undefined,
       title: { uz: "", ru: "", en: "", ger: "" },
       description: { uz: "", ru: "", en: "", ger: "" },
+      filePath: "",
     });
     setUploadedFileId("");
     setPreviewImage(DEFAULT_IMAGE);
@@ -187,22 +196,18 @@ const OurResources: React.FC = () => {
   };
 
   const onChangeTab = (key: string) => {
-    setCurrentLang(key);
     setSearchParams({
       lang: key,
-      current: String(searchParams.get("current")),
+      current: String(searchParams.get("current") || 1),
     });
   };
 
   const handleSubmit = () => {
-    if (!uploadedFileId) {
+    if (!values.filePath) {
       toast.error("Please upload a file before submitting");
       return;
     }
-    mutate({
-      ...values,
-      filePath: getFileUrl(uploadedFileId),
-    });
+    mutate(values);
   };
 
   const columns: ColumnsType<DataType> = [
@@ -223,16 +228,13 @@ const OurResources: React.FC = () => {
     {
       title: "File",
       dataIndex: "fileId",
-      render: (_value, record) => {
-        console.log(record);
-        return (
-          <Image
-            width={80}
-            src={get(record, "filePath")}
-            fallback={DEFAULT_IMAGE}
-          />
-        );
-      },
+      render: (_value, record) => (
+        <Image
+          width={80}
+          src={record.filePath || getFileUrl(record.fileId)}
+          fallback={DEFAULT_IMAGE}
+        />
+      ),
     },
     {
       title: "Edit",
@@ -266,12 +268,7 @@ const OurResources: React.FC = () => {
   return (
     <div>
       <Row justify="space-between" style={{ marginBottom: 16 }}>
-        <Tabs
-          items={items}
-          onChange={onChangeTab}
-          activeKey={currentLang}
-          defaultActiveKey={currentLang}
-        />
+        <Tabs items={items} onChange={onChangeTab} activeKey={currentLang} />
         <Button type="primary" onClick={() => setOpen(true)}>
           Create
         </Button>
@@ -283,7 +280,9 @@ const OurResources: React.FC = () => {
         loading={isLoading}
         pagination={{ current: Number(current || 1) }}
         rowKey={(record) => record.id}
-        onChange={(e) => setSearchParams({ lang, current: String(e.current) })}
+        onChange={(e) =>
+          setSearchParams({ lang: currentLang, current: String(e.current) })
+        }
       />
 
       <Drawer
@@ -293,12 +292,7 @@ const OurResources: React.FC = () => {
         title={isPost ? "Create Resource" : "Update Resource"}
         style={{ paddingBottom: 80 }}
       >
-        <Tabs
-          items={items}
-          onChange={onChangeTab}
-          activeKey={currentLang}
-          defaultActiveKey={currentLang}
-        />
+        <Tabs items={items} onChange={onChangeTab} activeKey={currentLang} />
 
         <Form layout="vertical" onFinish={handleSubmit}>
           <Row gutter={16}>
@@ -331,6 +325,7 @@ const OurResources: React.FC = () => {
                     setUploadedFileId("");
                     setFileList([]);
                     setPreviewImage(DEFAULT_IMAGE);
+                    setValues((prev) => ({ ...prev, filePath: "" }));
                   }}
                   listType="picture"
                 >
@@ -348,7 +343,7 @@ const OurResources: React.FC = () => {
           </Row>
 
           <Button type="primary" htmlType="submit">
-            Submit
+            {isPost ? "Create" : "Update"}
           </Button>
         </Form>
       </Drawer>

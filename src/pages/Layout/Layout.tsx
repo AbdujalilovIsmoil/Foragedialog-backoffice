@@ -16,6 +16,7 @@ import {
   FileTextOutlined,
   ApartmentOutlined,
   CrownOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -86,7 +87,9 @@ const ProfileMenu = () => {
           src="https://api.dicebear.com/7.x/miniavs/svg?seed=John"
           style={{ backgroundColor: "#1677ff" }}
         />
-        <span style={{ fontWeight: 500, fontSize: 16 }}>John Doe</span>
+        <span style={{ fontWeight: 500, fontSize: 16 }}>
+          {JSON.parse(storage.get("data") as string)?.userName}
+        </span>
       </Button>
     </Dropdown>
   );
@@ -103,7 +106,6 @@ function Layout() {
   // 🔹 Sidebar menu
   const navItems = [
     { id: 1, path: "/", icon: HomeOutlined, label: "Bosh sahifa" },
-
     {
       id: 2,
       label: "News Management",
@@ -156,6 +158,12 @@ function Layout() {
           path: "/pages/publisher",
           icon: SolutionOutlined,
         },
+        {
+          id: "4-3",
+          label: "Blog",
+          path: "/pages/blog",
+          icon: ReadOutlined,
+        },
       ],
     },
 
@@ -178,24 +186,12 @@ function Layout() {
         },
         {
           id: "5-3",
-          label: "Our Services",
-          path: "/pages/our-services",
-          icon: SolutionOutlined,
-        },
-        {
-          id: "5-4",
           label: "Our Partners",
           path: "/pages/our-partners",
           icon: CrownOutlined,
         },
         {
-          id: "5-5",
-          label: "Our Valued Clients",
-          path: "/pages/our-valued-clients",
-          icon: UserOutlined,
-        },
-        {
-          id: "5-6",
+          id: "5-4",
           label: "Our Resource",
           icon: DatabaseOutlined,
           path: "/pages/our-resource",

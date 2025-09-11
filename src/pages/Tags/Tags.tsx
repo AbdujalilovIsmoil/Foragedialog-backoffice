@@ -80,7 +80,7 @@ const Resource: React.FC = () => {
       tagName: Record<string, string>;
     }>
   >({
-    id: "",
+    id: 0,
     tagName: {
       uz: "",
       ru: "",
@@ -127,9 +127,11 @@ const Resource: React.FC = () => {
       title: "Edit",
       render: (value) => {
         return (
-          <Button type="text" size="large" onClick={() => openDrawData(value)}>
-            <EditOutlined style={{ color: "green" }} />
-          </Button>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => openDrawData(value)}
+          />
         );
       },
     },
@@ -138,12 +140,11 @@ const Resource: React.FC = () => {
       render: ({ id }) => {
         return (
           <Button
-            type="text"
-            size="large"
+            type="default"
+            danger
+            icon={<DeleteOutlined />}
             onClick={() => mutateDelete.mutate(id)}
-          >
-            <DeleteOutlined style={{ color: "red" }} />
-          </Button>
+          />
         );
       },
     },

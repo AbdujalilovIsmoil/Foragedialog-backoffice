@@ -70,8 +70,8 @@ const News: React.FC = () => {
   const [viewItem, setViewItem] = useState<NewsValues | null>(null);
 
   const { data: newsData, refetch: refetchNews } = useGet({
-    path: "/News/GetAll",
-    queryKey: "news",
+    path: "/Blog/GetAll",
+    queryKey: "blog",
   });
   const { data: categoriesData } = useGet({
     queryKey: "categories",
@@ -87,30 +87,30 @@ const News: React.FC = () => {
   });
 
   const postNews = usePost({
-    path: "/News/Create",
-    queryKey: ["news"],
+    path: "/Blog/Create",
+    queryKey: ["blog"],
     onSuccess: () => {
       setVisible(false);
       refetchNews();
-      message.success("News created successfully");
+      message.success("Blog created successfully");
     },
   });
   const putNews = usePut({
-    path: "/News/Update",
-    queryKey: ["news"],
+    path: "/Blog/Update",
+    queryKey: ["blog"],
     onSuccess: () => {
       setVisible(false);
       refetchNews();
-      message.success("News updated successfully");
+      message.success("Blog updated successfully");
     },
   });
   const deleteNews = useDelete({
-    path: "/News/Delete",
+    path: "/Blog/Delete",
     successText: "",
-    queryKey: ["news"],
+    queryKey: ["blog"],
     onSuccess: () => {
       refetchNews();
-      message.success("News deleted successfully");
+      message.success("Blog deleted successfully");
     },
   });
 
@@ -245,7 +245,7 @@ const News: React.FC = () => {
           }))}
         />
         <Button type="primary" onClick={() => setVisible(true)}>
-          Create News
+          Create Blog
         </Button>
       </div>
       <Table
@@ -259,7 +259,7 @@ const News: React.FC = () => {
       />
       {/* Drawer for create/edit */}
       <Drawer
-        title={values.id ? "Edit News" : "Create News"}
+        title={values.id ? "Edit BLog" : "Create Blog"}
         placement="right"
         width={900}
         onClose={() => setVisible(false)}

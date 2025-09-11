@@ -17,6 +17,8 @@ interface DataType {
   categoryName: Record<LangKey, string>;
 }
 
+const langs: LangKey[] = ["uz", "ru", "en", "ger"];
+
 const Category: React.FC = () => {
   const [isPost, setIsPost] = useState(true);
   const [open, setOpen] = useState<boolean>(false);
@@ -28,14 +30,14 @@ const Category: React.FC = () => {
   const [currentLang, setCurrentLang] = useState<LangKey>(langParam);
 
   useEffect(() => {
-    // ✅ reload bo‘lsa ham default param o‘rnatiladi
     if (!searchParams.get("lang") || !searchParams.get("current")) {
       setSearchParams({ lang: "uz", current: "1" });
     }
-  }, [searchParams, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data, isLoading } = useGet({
-    queryKey: "resource-category", // ✅ unikal bo‘lishi kerak
+    queryKey: "resource-category",
     path: "/ResourceCategory/GetAll",
   });
 
@@ -43,12 +45,15 @@ const Category: React.FC = () => {
 
   const { mutate } = mutationHook({
     queryKey: ["resource-category"],
-    onSuccess: async () => {
-      onClose();
-      form.resetFields();
-    },
     path: `/ResourceCategory/${isPost ? "Create" : "Update"}`,
     successText: `Success ${isPost ? "Create" : "Update"} Resource Category`,
+    onSuccess: async () => {
+      // server muvaffaqiyatli bo'lsa formni tozalaymiz va drawerni yopamiz
+      form.resetFields();
+      setIsPost(true);
+      setOpen(false);
+      // agar kerak bo'lsa, refetch useGet hook ichida avtomatik bo'ladi (react-query)
+    },
   });
 
   const mutateDelete = useDelete({
@@ -59,6 +64,9 @@ const Category: React.FC = () => {
       if (error instanceof Error) {
         toast.error(error.message, { pauseOnHover: false });
       }
+    },
+    onSuccess: async () => {
+      // agar delete muvaffaqiyatli bo'lsa
     },
   });
 
@@ -74,7 +82,8 @@ const Category: React.FC = () => {
   const showDrawer = () => {
     setOpen(true);
     setIsPost(true);
-    form.resetFields();
+    // create uchun bo'sh qiymatlar o'rnatamiz (id = 0)
+    form.setFieldsValue({ id: 0, uz: "", ru: "", en: "", ger: "" });
   };
 
   const onClose = () => {
@@ -85,9 +94,13 @@ const Category: React.FC = () => {
   const openDrawData = (record: DataType) => {
     setOpen(true);
     setIsPost(false);
+    // record.categoryName: { uz, ru, en, ger }
     form.setFieldsValue({
-      ...record.categoryName,
-      id: record.id,
+      id: Number(record.id),
+      uz: record.categoryName?.uz ?? "",
+      ru: record.categoryName?.ru ?? "",
+      en: record.categoryName?.en ?? "",
+      ger: record.categoryName?.ger ?? "",
     });
   };
 
@@ -96,7 +109,6 @@ const Category: React.FC = () => {
       title: "Resource Category",
       dataIndex: "categoryName",
       render: (value: DataType["categoryName"]) => {
-        if (!value) return null;
         return (
           <Tooltip title={value[currentLang]}>{value[currentLang]}</Tooltip>
         );
@@ -116,7 +128,7 @@ const Category: React.FC = () => {
         <Button
           type="text"
           size="large"
-          onClick={() => mutateDelete.mutate(id)}
+          onClick={() => mutateDelete.mutate(`${Number(id)}`)}
         >
           <DeleteOutlined style={{ color: "red" }} />
         </Button>
@@ -147,7 +159,7 @@ const Category: React.FC = () => {
 
       <Table<DataType>
         columns={columns}
-        dataSource={Array.isArray(data) ? data : []} // ✅ fallback
+        dataSource={Array.isArray(data) ? data : []}
         loading={isLoading}
         pagination={{
           current: Number(current),
@@ -175,32 +187,40 @@ const Category: React.FC = () => {
         <Form
           form={form}
           layout="vertical"
-          onFinish={(values) =>
-            mutate({
-              id: values.id,
+          onFinish={() => {
+            const allValues = form.getFieldsValue();
+            const payload = {
+              id: isPost ? 0 : Number(allValues.id || 0),
               categoryName: {
-                uz: values.uz,
-                ru: values.ru,
-                en: values.en,
-                ger: values.ger,
+                uz: String(allValues.uz || ""),
+                ru: String(allValues.ru || ""),
+                en: String(allValues.en || ""),
+                ger: String(allValues.ger || ""),
               },
-            })
-          }
+            };
+            mutate(payload);
+          }}
         >
           <Form.Item name="id" hidden>
             <Input />
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item
-                label="Category"
-                name={currentLang}
-                rules={[{ required: true, message: "Please enter category" }]}
+            {langs.map((lang) => (
+              <Col
+                span={24}
+                key={lang}
+                style={{ display: currentLang === lang ? "block" : "none" }}
               >
-                <Input placeholder="Please enter category" />
-              </Form.Item>
-            </Col>
+                <Form.Item
+                  label="Category"
+                  name={lang}
+                  rules={[{ required: true, message: "Please enter category" }]}
+                >
+                  <Input placeholder="Please enter category" />
+                </Form.Item>
+              </Col>
+            ))}
           </Row>
 
           <Button type="primary" htmlType="submit">

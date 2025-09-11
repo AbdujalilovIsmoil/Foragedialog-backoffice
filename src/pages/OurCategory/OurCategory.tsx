@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import type { TableProps, TabsProps, UploadFile } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   DeleteOutlined,
   EditOutlined,
@@ -21,210 +21,212 @@ import {
   Upload,
   Image,
 } from "antd";
-import { storage } from "@/services";
 
 type ColumnsType<T extends object = object> = TableProps<T>["columns"];
 
+interface ApiItem {
+  id?: string | number;
+  name?: { uz?: string; ru?: string; en?: string; ger?: string };
+  picturesId?: string | null;
+  images?: string[];
+  [k: string]: any;
+}
+
 interface DataType {
   id: string | number;
-  name: {
-    uz: string;
-    ru: string;
-    en: string;
-    ger: string;
-  };
-  picturesId: string;
-  picturePath?: string;
+  name: { uz: string; ru: string; en: string; ger: string };
+  images: string[];
 }
 
 const OurCategory: React.FC = () => {
   const [isPost, setIsPost] = useState(true);
-  const [open, setOpen] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
+  const [form] = Form.useForm();
   const [searchParams, setSearchParams] = useSearchParams();
   const lang = searchParams.get("lang") || "uz";
-  const current = searchParams.get("current");
-  const [currentLang, setCurrentLang] = useState(lang);
+  const current = searchParams.get("current") || "1";
+  const [currentLang, setCurrentLang] = useState<string>(lang);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+  const [nameValues, setNameValues] = useState({
+    uz: "",
+    ru: "",
+    en: "",
+    ger: "",
+  }); // ← barcha tillar state
 
   useEffect(() => {
-    if (!lang) {
-      setSearchParams({ lang: "uz", current: String(1) });
-    } else {
-      setSearchParams({ lang, current: String(current ? current : 1) });
-    }
-  }, []);
+    setSearchParams({ lang: currentLang, current });
+  }, [currentLang]);
 
-  const { data, isLoading } = useGet({
+  const { data: rawData, isLoading } = useGet({
     queryKey: "ourCategory",
     path: "/OurCategory/GetAll",
   });
 
-  const mutationHook = isPost ? usePost : usePut;
+  const tableData: DataType[] = (rawData || []).map((it) => {
+    const nameObj = it.name || { uz: "", ru: "", en: "", ger: "" };
+    const imgs: string[] =
+      Array.isArray(it.images) && it.images.length
+        ? it.images
+        : it.picturesId
+        ? [it.picturesId]
+        : [];
+    return { id: it.id as string | number, name: nameObj, images: imgs };
+  });
 
+  const mutationHook = isPost ? usePost : usePut;
   const { mutate } = mutationHook({
     queryKey: ["ourCategory"],
-    onSuccess: async () => onClose(),
     path: `/OurCategory/${isPost ? "Create" : "Update"}`,
     successText: `Success ${isPost ? "Create" : "Update"} Our Category`,
+    onSuccess: () => onClose(),
   });
 
   const mutateDelete = useDelete({
     queryKey: ["ourCategory"],
     path: "/OurCategory/Delete",
     successText: "Delete Our Category One",
-    onError: async (error: unknown) => {
-      if (error instanceof Error) {
-        toast.error(error.message, { pauseOnHover: false });
-      }
+    onError: (error: unknown) => {
+      if (error instanceof Error) toast.error(error.message);
     },
   });
 
-  // File upload hook
   const { mutate: uploadFile } = usePost({
     queryKey: ["uploadFile"],
     path: "/File/UploadFile",
     successText: "File uploaded successfully",
-    onError: async (error: unknown) => {
-      toast.error("File upload failed");
+    onSuccess: (uploaded: any) => {
+      const fileId =
+        uploaded?.content?.id || uploaded?.id || uploaded?.data?.id;
+      const fileName =
+        uploaded?.content?.fileName || uploaded?.fileName || "file";
+      if (!fileId) {
+        toast.error("Upload response missing id");
+        return;
+      }
+      setImages((prev) => [...prev, fileId]);
+      setFileList((prev) => [
+        ...prev,
+        {
+          uid: fileId,
+          name: fileName,
+          url: `${import.meta.env.VITE_REACT_API_URL}/File/DownloadFile/download?id=${fileId}`,
+          status: "done",
+        },
+      ]);
     },
+    onError: () => toast.error("File upload failed"),
   });
 
-  const onChange = (key: string) => {
-    setCurrentLang(key);
-    setSearchParams({
-      lang: key,
-      current: String(searchParams.get("current")),
-    });
-  };
+  const onChangeTab = (key: string) => setCurrentLang(key);
 
-  const showDrawer = () => setOpen(true);
+  const showDrawer = () => {
+    setOpen(true);
+    setIsPost(true);
+    setNameValues({ uz: "", ru: "", en: "", ger: "" }); // ← reset all languages
+    form.setFieldsValue({ id: undefined, name: "" }); // only currentLang input controlled by form
+    setFileList([]);
+    setImages([]);
+  };
 
   const onClose = () => {
     setOpen(false);
     setIsPost(true);
+    setNameValues({ uz: "", ru: "", en: "", ger: "" });
+    form.resetFields();
     setFileList([]);
+    setImages([]);
   };
 
-  type DynamicValues<T extends object = {}> = {
-    id: string | number;
-  } & T;
-
-  const [values, setValues] = useState<
-    DynamicValues<{
-      name: Record<string, string>;
-      picturesId: string;
-    }>
-  >({
-    id: "",
-    name: {
-      uz: "",
-      ru: "",
-      en: "",
-      ger: "",
-    },
-    picturesId: "",
-  });
-
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
-
-  const changeLanguage = (e: ChangeEvent<HTMLInputElement>) => {
-    const { value, name } = e.target;
-
-    setValues({
-      ...values,
-      name: {
-        ...values.name,
-        [name]: value,
-      },
-    });
-  };
-
-  const handleUpload = async (file: File) => {
+  const handleImageUpload = (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-
-    uploadFile(formData, {
-      onSuccess: (uploaded: any) => {
-        setValues((prev) => ({
-          ...prev,
-          picturesId: uploaded.id,
-        }));
-
-        setFileList([
-          {
-            uid: uploaded.id,
-            name: uploaded.fileName,
-            status: "done",
-            url: uploaded.path,
-          },
-        ]);
-      },
-    });
+    uploadFile(formData);
+    return false;
   };
 
-  const openDrawData = (values: DataType) => {
-    showDrawer();
+  const openDrawData = (row: DataType) => {
+    setOpen(true);
     setIsPost(false);
-    setValues({
-      id: values.id,
-      name: { ...values.name },
-      picturesId: values.picturesId,
-    });
+    setNameValues({ ...row.name }); // barcha tillar state ga
+    form.setFieldsValue({ id: row.id, name: row.name }); // ← object ko'rinishida
+    setFileList(
+      row.images.map((id) => ({
+        uid: id,
+        name: id,
+        url: `${import.meta.env.VITE_REACT_API_URL}/File/DownloadFile/download?id=${id}`,
+        status: "done",
+      }))
+    );
+    setImages([...row.images]);
+  };
 
-    if (values.picturePath) {
-      setFileList([
-        {
-          uid: values.picturesId,
-          name: "image",
-          status: "done",
-          url: values.picturePath,
-        },
-      ]);
+  const onSubmit = () => {
+    const payload: any = { name: nameValues, picturesId: images[0] || null };
+    if (!isPost) payload.id = form.getFieldValue("id");
+    if (!payload.picturesId) {
+      toast.error("Please upload at least one picture");
+      return;
     }
+    mutate(payload);
   };
 
   const columns: ColumnsType<DataType> = [
     {
       title: "Name",
       dataIndex: "name",
-      render: (value) => {
-        return (
-          <Tooltip title={value[currentLang]}>{value[currentLang]}</Tooltip>
-        );
-      },
+      render: (value) => (
+        <Tooltip title={value[currentLang as keyof DataType["name"]]}>
+          {value[currentLang as keyof DataType["name"]]}
+        </Tooltip>
+      ),
     },
     {
-      title: "Picture",
-      dataIndex: "picturePath",
-      render: (value) => value && <Image width={80} src={value} />,
+      title: "Pictures",
+      dataIndex: "images",
+      render: (imgs) =>
+        imgs.length ? (
+          <Row gutter={8}>
+            {imgs.map((id) => (
+              <Col key={id}>
+                <Image
+                  width={80}
+                  src={`${
+                    import.meta.env.VITE_REACT_API_URL
+                  }/File/DownloadFile/download?id=${id}`}
+                  fallback={`${
+                    import.meta.env.VITE_REACT_API_URL
+                  }/File/DownloadFile/download?id=${id}`}
+                />
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <span>No Images</span>
+        ),
     },
     {
       title: "Edit",
-      render: (value) => {
-        return (
-          <Button type="text" size="large" onClick={() => openDrawData(value)}>
-            <EditOutlined style={{ color: "green" }} />
-          </Button>
-        );
-      },
+      render: (_, record) => (
+        <Button type="text" size="large" onClick={() => openDrawData(record)}>
+          <EditOutlined style={{ color: "green" }} />
+        </Button>
+      ),
     },
     {
       title: "Delete",
-      render: ({ id }) => {
-        return (
-          <Button
-            type="text"
-            size="large"
-            onClick={() => mutateDelete.mutate(id)}
-          >
-            <DeleteOutlined style={{ color: "red" }} />
-          </Button>
-        );
-      },
+      render: (record) => (
+        <Button
+          type="text"
+          size="large"
+          onClick={() => mutateDelete.mutate(record.id)}
+        >
+          <DeleteOutlined style={{ color: "red" }} />
+        </Button>
+      ),
     },
   ];
-
-  console.log(storage.get("data"));
-  
 
   const items: TabsProps["items"] = [
     { key: "uz", label: "Uzbek" },
@@ -236,12 +238,7 @@ const OurCategory: React.FC = () => {
   return (
     <div>
       <Row justify="space-between" style={{ marginBottom: 16 }}>
-        <Tabs
-          items={items}
-          onChange={onChange}
-          activeKey={currentLang}
-          defaultActiveKey={currentLang}
-        />
+        <Tabs items={items} onChange={onChangeTab} activeKey={currentLang} />
         <Button type="primary" onClick={showDrawer}>
           Create
         </Button>
@@ -249,74 +246,63 @@ const OurCategory: React.FC = () => {
 
       <Table<DataType>
         columns={columns}
-        dataSource={data}
+        dataSource={tableData}
         loading={isLoading}
-        pagination={{
-          current: Number(current || 1),
-        }}
+        pagination={{ current: Number(current) }}
         rowKey={(record) => record.id}
-        onChange={(e) => setSearchParams({ lang, current: String(e.current) })}
+        onChange={(pagination) =>
+          setSearchParams({
+            lang: currentLang,
+            current: String(pagination.current),
+          })
+        }
       />
 
       <Drawer
         width={500}
         open={open}
         onClose={onClose}
-        title="Create Our Category"
-        styles={{
-          body: {
-            paddingBottom: 80,
-          },
-        }}
+        title={isPost ? "Create Our Category" : "Edit Our Category"}
+        styles={{ body: { paddingBottom: 80 } }}
       >
-        <Tabs
-          items={items}
-          onChange={onChange}
-          activeKey={currentLang}
-          defaultActiveKey={currentLang}
-        />
+        <Tabs items={items} onChange={onChangeTab} activeKey={currentLang} />
+        <Form layout="vertical" form={form} onFinish={onSubmit}>
+          <Form.Item name="id" hidden>
+            <Input />
+          </Form.Item>
 
-        <Form layout="vertical" onFinish={() => mutate(values)}>
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item
-                label="Name"
-                name={currentLang}
-                rules={[{ required: true, message: "Please enter name" }]}
-              >
-                <Input
-                  name={currentLang}
-                  onChange={changeLanguage}
-                  placeholder="Please enter name"
-                  value={
-                    values.name[currentLang as keyof typeof values.name] || ""
-                  }
-                />
-              </Form.Item>
-            </Col>
+          <Form.Item
+            label={`Name (${currentLang.toUpperCase()})`}
+            name={["name", currentLang]} // ← shu yer
+            rules={[{ required: true, message: "Please enter name" }]}
+          >
+            <Input
+              value={nameValues[currentLang as keyof typeof nameValues]}
+              onChange={(e) =>
+                setNameValues((prev) => ({
+                  ...prev,
+                  [currentLang]: e.target.value,
+                }))
+              }
+            />
+          </Form.Item>
 
-            <Col span={24}>
-              <Form.Item label="Upload Picture">
-                <Upload
-                  beforeUpload={(file) => {
-                    handleUpload(file);
-                    return false;
-                  }}
-                  fileList={fileList}
-                  onRemove={() => {
-                    setValues({ ...values, picturesId: "" });
-                    setFileList([]);
-                  }}
-                  listType="picture"
-                >
-                  <Button icon={<UploadOutlined />}>Upload</Button>
-                </Upload>
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.Item label="Upload Picture">
+            <Upload
+              beforeUpload={handleImageUpload}
+              listType="picture"
+              fileList={fileList}
+              onRemove={(file) => {
+                setFileList((prev) => prev.filter((f) => f.uid !== file.uid));
+                setImages((prev) => prev.filter((id) => id !== file.uid));
+              }}
+            >
+              <Button icon={<UploadOutlined />}>Upload Image</Button>
+            </Upload>
+          </Form.Item>
 
           <Button type="primary" htmlType="submit">
-            Submit
+            {isPost ? "Create" : "Update"}
           </Button>
         </Form>
       </Drawer>
