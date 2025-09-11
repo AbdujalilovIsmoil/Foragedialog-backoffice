@@ -10,7 +10,6 @@ import {
   Profile,
   NotFound,
   Settings,
-  Articles,
   NewsCategory,
   ResourceCategory,
   OurCategory,
@@ -78,10 +77,6 @@ function App() {
             path={`/${correctLang}/pages/our-resource`}
           />
           <Route element={<Tags />} path={`/${correctLang}/pages/tags`} />
-          <Route
-            element={<Articles />}
-            path={`/${correctLang}/pages/articles`}
-          />
           <Route
             element={<Settings />}
             path={`/${correctLang}/pages/settings`}

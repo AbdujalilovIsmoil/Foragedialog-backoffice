@@ -104,8 +104,9 @@ const ResourceManager: React.FC = () => {
   });
 
   const deleteResource = useDelete({
-    path: "/Resource/Delete",
     queryKey: ["resource"],
+    successText: "Resource deleted",
+    path: "/Resource/Delete",
     onSuccess: () => {
       refetch();
       message.success("Resource deleted");

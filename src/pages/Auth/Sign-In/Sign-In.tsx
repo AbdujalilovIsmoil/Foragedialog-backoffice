@@ -1,10 +1,56 @@
 import { usePost } from "@/hooks";
-import { Form, Input } from "antd";
 import { storage } from "@/services";
 import { toast } from "react-toastify";
+import styled from "styled-components";
+import { Form, Input, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { LoginForm, LoginFormButton, LoginFormContainer } from "./style";
+
+const { Title } = Typography;
+
+const Container = styled.div`
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+`;
+
+const Card = styled.div`
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+`;
+
+const StyledFormButton = styled.button`
+  width: 100%;
+  background-color: #667eea;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background-color: #5a67d8;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const StyledInput = styled(Input)`
+  border-radius: 8px;
+  padding: 10px;
+`;
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -37,8 +83,8 @@ const SignIn = () => {
     pauseOnHover: false,
   };
 
-  const { mutate } = usePost({
-    queryKey: "login",
+  const { mutate, isPending } = usePost({
+    queryKey: ["login"],
     path: "/Auth/Login",
     onError: (error: unknown) => {
       if (error instanceof Error) {
@@ -48,72 +94,59 @@ const SignIn = () => {
     onSuccess: (data: unknown) => {
       const typeData = data as successData;
       const { token, userName } = typeData.content;
-      const privateData = {
-        token,
-        userName,
-        id: typeData.id,
-      };
+      const privateData = { token, userName, id: typeData.id };
 
-      toast.success("You have registered", toastProperties);
+      toast.success("You have logged in!", toastProperties);
 
       setTimeout(() => {
         storage.set("data", privateData);
         navigate("/");
-      }, 2000);
+      }, 1500);
     },
   });
 
   return (
-    <LoginFormContainer>
-      <LoginForm>
+    <Container>
+      <Card>
+        <Title level={2} style={{ marginBottom: 24, color: "#333" }}>
+          Sign In
+        </Title>
         <Form
-          name="normal_login"
-          className="login-form"
-          initialValues={{
-            remember: true,
-          }}
+          name="login_form"
+          layout="vertical"
           onFinish={(values: loginInterface) => mutate(values)}
         >
           <Form.Item
             name="email"
-            rules={[
-              {
-                required: true,
-                message: "Please input your Username!",
-              },
-            ]}
+            rules={[{ required: true, message: "Please enter your email!" }]}
           >
-            <Input
+            <StyledInput
               size="large"
-              placeholder="Login"
-              prefix={<UserOutlined className="site-form-item-icon" />}
+              placeholder="Email"
+              prefix={<UserOutlined />}
             />
           </Form.Item>
+
           <Form.Item
             name="password"
-            rules={[
-              {
-                required: true,
-                message: "Please input your Password!",
-              },
-            ]}
+            rules={[{ required: true, message: "Please enter your password!" }]}
           >
-            <Input
+            <StyledInput
               size="large"
-              prefix={<LockOutlined className="site-form-item-icon" />}
               type="password"
               placeholder="Password"
+              prefix={<LockOutlined />}
             />
           </Form.Item>
 
           <Form.Item>
-            <LoginFormButton size="large" type="primary" htmlType="submit">
-              Log in
-            </LoginFormButton>
+            <StyledFormButton type="submit" disabled={isPending}>
+              {isPending ? "Logging in..." : "Log In"}
+            </StyledFormButton>
           </Form.Item>
         </Form>
-      </LoginForm>
-    </LoginFormContainer>
+      </Card>
+    </Container>
   );
 };
 

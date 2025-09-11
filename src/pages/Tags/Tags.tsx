@@ -6,7 +6,7 @@ import { useDelete, useGet, usePost, usePut } from "@/hooks";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { CategorySection, CategoryTopContainer } from "./style";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import { Col, Row, Form, Tabs, Table, Input, Drawer, Tooltip } from "antd";
+import { Col, Row, Form, Tabs, Table, Input, Drawer } from "antd";
 
 type ColumnsType<T extends object = object> = TableProps<T>["columns"];
 

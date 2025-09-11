@@ -64,7 +64,7 @@ const OurCategory: React.FC = () => {
     path: "/OurCategory/GetAll",
   });
 
-  const tableData: DataType[] = (rawData || []).map((it) => {
+  const tableData: DataType[] = (rawData || []).map((it: ApiItem) => {
     const nameObj = it.name || { uz: "", ru: "", en: "", ger: "" };
     const imgs: string[] =
       Array.isArray(it.images) && it.images.length
@@ -111,7 +111,9 @@ const OurCategory: React.FC = () => {
         {
           uid: fileId,
           name: fileName,
-          url: `${import.meta.env.VITE_REACT_API_URL}/File/DownloadFile/download?id=${fileId}`,
+          url: `${
+            import.meta.env.VITE_REACT_API_URL
+          }/File/DownloadFile/download?id=${fileId}`,
           status: "done",
         },
       ]);
@@ -155,7 +157,9 @@ const OurCategory: React.FC = () => {
       row.images.map((id) => ({
         uid: id,
         name: id,
-        url: `${import.meta.env.VITE_REACT_API_URL}/File/DownloadFile/download?id=${id}`,
+        url: `${
+          import.meta.env.VITE_REACT_API_URL
+        }/File/DownloadFile/download?id=${id}`,
         status: "done",
       }))
     );
@@ -188,7 +192,7 @@ const OurCategory: React.FC = () => {
       render: (imgs) =>
         imgs.length ? (
           <Row gutter={8}>
-            {imgs.map((id) => (
+            {imgs.map((id: number) => (
               <Col key={id}>
                 <Image
                   width={80}

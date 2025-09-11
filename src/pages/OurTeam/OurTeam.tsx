@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import type { TableProps, TabsProps, UploadFile } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
-import { useState, useEffect, type ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import {
   DeleteOutlined,
   EditOutlined,
@@ -179,7 +179,13 @@ const OurTeam: React.FC = () => {
     } else {
       setValues((prev) => ({
         ...prev,
-        [field]: { ...prev[field], [name]: value },
+        [field]: {
+          ...(prev[field as "name" | "role" | "about" | "experience"] as Record<
+            string,
+            string
+          >),
+          [name]: value,
+        },
       }));
     }
   };

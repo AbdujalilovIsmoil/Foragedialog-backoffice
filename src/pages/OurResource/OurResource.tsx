@@ -79,7 +79,6 @@ const OurResources: React.FC = () => {
     filePath: "",
   });
 
-  const [uploadedFileId, setUploadedFileId] = useState<string>("");
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [previewImage, setPreviewImage] = useState<string>(DEFAULT_IMAGE);
 
@@ -116,7 +115,6 @@ const OurResources: React.FC = () => {
     onSuccess: (uploaded) => {
       const id = get(uploaded, "content.id", "");
       const name = get(uploaded, "content.fileName", "");
-      setUploadedFileId(id);
       const url = getFileUrl(id);
       setPreviewImage(getFileIcon(name, url));
       setFileList([
@@ -155,7 +153,6 @@ const OurResources: React.FC = () => {
       description: { ...record.description },
       filePath: record.filePath || getFileUrl(record.fileId),
     });
-    setUploadedFileId(record.fileId || "");
     setOpen(true);
 
     const url = record.filePath || getFileUrl(record.fileId);
@@ -180,7 +177,6 @@ const OurResources: React.FC = () => {
       description: { uz: "", ru: "", en: "", ger: "" },
       filePath: "",
     });
-    setUploadedFileId("");
     setPreviewImage(DEFAULT_IMAGE);
   };
 
@@ -322,7 +318,6 @@ const OurResources: React.FC = () => {
                   beforeUpload={handleUpload}
                   fileList={fileList}
                   onRemove={() => {
-                    setUploadedFileId("");
                     setFileList([]);
                     setPreviewImage(DEFAULT_IMAGE);
                     setValues((prev) => ({ ...prev, filePath: "" }));

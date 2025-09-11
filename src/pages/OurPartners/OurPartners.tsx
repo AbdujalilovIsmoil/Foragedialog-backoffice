@@ -77,7 +77,7 @@ const OurPartners: React.FC = () => {
     setSearchParams({ lang: currentLang, current: String(current) });
   }, []);
 
-  const { data, isLoading } = useGet<DataType[]>({
+  const { data, isLoading } = useGet({
     queryKey: "ourPartners",
     path: "/OurPartners/GetAll",
   });
@@ -158,7 +158,7 @@ const OurPartners: React.FC = () => {
     setOpen(true);
     setIsPost(false);
     setValues({
-      id: row.id,
+      id: `${row.id}`,
       name: { ...row.name },
       about: { ...row.about },
       link: row.link,
@@ -229,7 +229,7 @@ const OurPartners: React.FC = () => {
         <Button
           type="text"
           size="large"
-          onClick={() => mutateDelete.mutate(record.id)}
+          onClick={() => mutateDelete.mutate(`${record.id}`)}
         >
           <DeleteOutlined style={{ color: "red" }} />
         </Button>
@@ -276,7 +276,7 @@ const OurPartners: React.FC = () => {
               <Form.Item label="Name" rules={[{ required: true }]}>
                 <Input
                   name={currentLang}
-                  value={values.name[currentLang]}
+                  value={values.name[currentLang as "uz" | "ru" | "en" | "ger"]}
                   onChange={(e) => changeLanguage(e, "name")}
                   placeholder="Enter name"
                 />
@@ -286,7 +286,9 @@ const OurPartners: React.FC = () => {
               <Form.Item label="About" rules={[{ required: true }]}>
                 <Input
                   name={currentLang}
-                  value={values.about[currentLang]}
+                  value={
+                    values.about[currentLang as "uz" | "ru" | "en" | "ger"]
+                  }
                   onChange={(e) => changeLanguage(e, "about")}
                   placeholder="Enter about"
                 />
