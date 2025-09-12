@@ -127,7 +127,7 @@ const OurPartners: React.FC = () => {
           status: "done",
           url: `${
             import.meta.env.VITE_REACT_API_URL
-          }/File/DownloadFile/download?id=${uploaded.id}`,
+          }/File/DownloadFile/download/${uploaded.id}`,
         },
       ]);
     },
@@ -170,7 +170,7 @@ const OurPartners: React.FC = () => {
           uid: row.picturesId,
           name: "image",
           status: "done",
-          url: `${API_URL}/File/DownloadFile/download?id=${row.picturesId}`,
+          url: `${API_URL}/File/DownloadFile/download/${row.picturesId}`,
         },
       ]);
     }
@@ -209,7 +209,7 @@ const OurPartners: React.FC = () => {
             width={80}
             src={`${
               import.meta.env.VITE_REACT_API_URL
-            }/File/DownloadFile/download?id=${record.picturesId}`}
+            }/File/DownloadFile/download/${record.picturesId}`}
           />
         ) : (
           <span>No Image</span>

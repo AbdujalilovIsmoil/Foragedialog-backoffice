@@ -33,7 +33,7 @@ const getFileUrl = (id?: string) =>
   id
     ? `${
         import.meta.env.VITE_REACT_API_URL
-      }/File/DownloadFile/download?id=${id}`
+      }/File/DownloadFile/download/${id}`
     : "";
 
 interface MultilangText {

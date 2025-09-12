@@ -363,7 +363,7 @@ const News: React.FC = () => {
                     name: id,
                     url: `${
                       import.meta.env.VITE_REACT_API_URL
-                    }/File/DownloadFile/download?id=${id}`,
+                    }/File/DownloadFile/download/${id}`,
                   }))}
                 >
                   <Button icon={<UploadOutlined />}>Upload Images</Button>
@@ -488,7 +488,7 @@ const News: React.FC = () => {
                     style={{ objectFit: "cover", borderRadius: 6 }}
                     src={`${
                       import.meta.env.VITE_REACT_API_URL
-                    }/File/DownloadFile/download?id=${id}`}
+                    }/File/DownloadFile/download/${id}`}
                   />
                 ))}
               </div>

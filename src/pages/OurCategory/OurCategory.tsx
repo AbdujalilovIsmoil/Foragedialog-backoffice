@@ -113,7 +113,7 @@ const OurCategory: React.FC = () => {
           name: fileName,
           url: `${
             import.meta.env.VITE_REACT_API_URL
-          }/File/DownloadFile/download?id=${fileId}`,
+          }/File/DownloadFile/download/${fileId}`,
           status: "done",
         },
       ]);
@@ -159,7 +159,7 @@ const OurCategory: React.FC = () => {
         name: id,
         url: `${
           import.meta.env.VITE_REACT_API_URL
-        }/File/DownloadFile/download?id=${id}`,
+        }/File/DownloadFile/download/${id}`,
         status: "done",
       }))
     );
@@ -198,10 +198,10 @@ const OurCategory: React.FC = () => {
                   width={80}
                   src={`${
                     import.meta.env.VITE_REACT_API_URL
-                  }/File/DownloadFile/download?id=${id}`}
+                  }/File/DownloadFile/download/${id}`}
                   fallback={`${
                     import.meta.env.VITE_REACT_API_URL
-                  }/File/DownloadFile/download?id=${id}`}
+                  }/File/DownloadFile/download/${id}`}
                 />
               </Col>
             ))}

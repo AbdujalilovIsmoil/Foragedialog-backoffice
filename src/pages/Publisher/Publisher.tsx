@@ -21,7 +21,7 @@ const BASE_URL = "http://95.130.227.28:8080";
 const DEFAULT_IMAGE = "https://via.placeholder.com/80?text=No+Image";
 
 const getFileUrl = (id?: string) =>
-  id ? `${BASE_URL}/File/DownloadFile/download?id=${id}` : DEFAULT_IMAGE;
+  id ? `${BASE_URL}/File/DownloadFile/download/${id}` : DEFAULT_IMAGE;
 
 const PublisherComponent: React.FC = () => {
   const [isPost, setIsPost] = useState(true);

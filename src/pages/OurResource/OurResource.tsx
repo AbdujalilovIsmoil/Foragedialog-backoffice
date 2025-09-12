@@ -50,7 +50,7 @@ const fileTypeIcons: Record<string, string> = {
 
 const getFileUrl = (id?: string) => {
   if (!id) return "";
-  return `${BASE_URL}/File/DownloadFile/download?id=${id}`;
+  return `${BASE_URL}/File/DownloadFile/download/${id}`;
 };
 
 const getFileIcon = (fileName?: string, fileUrl?: string) => {
