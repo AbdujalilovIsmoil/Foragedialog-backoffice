@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import React, { useState, useMemo } from "react";
 import {
   Row,
   Card,
@@ -11,10 +13,11 @@ import {
   Popconfirm,
   Tabs,
   message,
-  Image,
   Modal,
   Descriptions,
   Divider,
+  Select,
+  Image as AntdImage,
 } from "antd";
 import {
   UploadOutlined,
@@ -22,21 +25,50 @@ import {
   DeleteOutlined,
   PlusOutlined,
   EyeOutlined,
+  FilePdfOutlined,
+  FileWordOutlined,
+  FileExcelOutlined,
+  FileUnknownOutlined,
 } from "@ant-design/icons";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
 
 const { TabPane } = Tabs;
-const DEFAULT_IMAGE = "https://via.placeholder.com/80?text=No+Image";
-const languages: ("uz" | "ru" | "en" | "ger")[] = ["uz", "ru", "en", "ger"];
+const { Option } = Select;
 
+type Language = "uz" | "ru" | "en" | "ger";
+const languages: Language[] = ["uz", "ru", "en", "ger"];
+
+const DEFAULT_IMAGE = "https://via.placeholder.com/160?text=No+Image";
+
+// === IMPORTANT: use NEXT_PUBLIC env var for client-side Next.js ===
+const BASE_API = import.meta.env.VITE_REACT_API_URL || "";
 const getFileUrl = (id?: string) =>
-  id
-    ? `${
-        import.meta.env.VITE_REACT_API_URL
-      }/File/DownloadFile/download/${id}`
-    : "";
+  id ? `${BASE_API}/File/DownloadFile/download/${id}` : "";
+
+const isImage = (fileType?: string) => (fileType || "").startsWith("image/");
+const getFileIcon = (fileType?: string) => {
+  if (!fileType) return <FileUnknownOutlined style={{ fontSize: 40 }} />;
+  const ft = fileType.toLowerCase();
+  if (ft.includes("pdf"))
+    return <FilePdfOutlined style={{ fontSize: 40, color: "red" }} />;
+  if (ft.includes("word") || ft.includes("msword") || ft.includes("doc"))
+    return <FileWordOutlined style={{ fontSize: 40, color: "blue" }} />;
+  if (
+    ft.includes("excel") ||
+    ft.includes("spreadsheet") ||
+    ft.includes("sheet")
+  )
+    return <FileExcelOutlined style={{ fontSize: 40, color: "green" }} />;
+  return <FileUnknownOutlined style={{ fontSize: 40 }} />;
+};
 
 interface MultilangText {
+  uz: string;
+  ru: string;
+  en: string;
+  ger: string;
+}
+interface SizeObject {
   uz: string;
   ru: string;
   en: string;
@@ -47,30 +79,48 @@ interface ResourceItem {
   id?: number;
   fileName: MultilangText;
   subject: MultilangText;
-  fileId?: string;
-  fileType?: string;
-  size?: string;
+  resourceCategoryId?: number;
   publishedDate?: string;
+  fileIdUZ?: string;
+  fileIdRU?: string;
+  fileIdEN?: string;
+  fileIdGER?: string;
+  fileType?: string; // common file type (keeps last uploaded type)
+  size?: SizeObject;
 }
 
 const emptyMultilang: MultilangText = { uz: "", ru: "", en: "", ger: "" };
+const emptySize: SizeObject = { uz: "", ru: "", en: "", ger: "" };
 
 const ResourceManager: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState<"uz" | "ru" | "en" | "ger">(
-    "uz"
-  );
+  const [currentLang, setCurrentLang] = useState<Language>("uz");
   const [selectedResource, setSelectedResource] = useState<ResourceItem>({
     fileName: emptyMultilang,
     subject: emptyMultilang,
+    size: emptySize,
   });
-  const [fileList, setFileList] = useState<any[]>([]);
-  const [previewUrl, setPreviewUrl] = useState(DEFAULT_IMAGE);
 
-  const [fileNameLang, setFileNameLang] =
-    useState<MultilangText>(emptyMultilang);
-  const [subjectLang, setSubjectLang] = useState<MultilangText>(emptyMultilang);
+  const [fileLists, setFileLists] = useState<Record<Language, any[]>>({
+    uz: [],
+    ru: [],
+    en: [],
+    ger: [],
+  });
+
+  const [previews, setPreviews] = useState<Record<Language, string>>({
+    uz: DEFAULT_IMAGE,
+    ru: DEFAULT_IMAGE,
+    en: DEFAULT_IMAGE,
+    ger: DEFAULT_IMAGE,
+  });
+
+  // categories
+  const { data: categories, isLoading: categoriesLoading } = useGet({
+    path: "/ResourceCategory/GetAll",
+    queryKey: "resource-categories",
+  });
 
   const {
     data: resources,
@@ -104,9 +154,9 @@ const ResourceManager: React.FC = () => {
   });
 
   const deleteResource = useDelete({
+    path: "/Resource/Delete",
     queryKey: ["resource"],
     successText: "Resource deleted",
-    path: "/Resource/Delete",
     onSuccess: () => {
       refetch();
       message.success("Resource deleted");
@@ -114,11 +164,18 @@ const ResourceManager: React.FC = () => {
   });
 
   const resetForm = () => {
-    setSelectedResource({ fileName: emptyMultilang, subject: emptyMultilang });
-    setFileList([]);
-    setPreviewUrl(DEFAULT_IMAGE);
-    setFileNameLang(emptyMultilang);
-    setSubjectLang(emptyMultilang);
+    setSelectedResource({
+      fileName: emptyMultilang,
+      subject: emptyMultilang,
+      size: emptySize,
+    });
+    setFileLists({ uz: [], ru: [], en: [], ger: [] });
+    setPreviews({
+      uz: DEFAULT_IMAGE,
+      ru: DEFAULT_IMAGE,
+      en: DEFAULT_IMAGE,
+      ger: DEFAULT_IMAGE,
+    });
     setCurrentLang("uz");
   };
 
@@ -128,148 +185,304 @@ const ResourceManager: React.FC = () => {
   };
 
   const openDrawerForEdit = (res: ResourceItem) => {
-    setSelectedResource(res);
-    setFileNameLang(res.fileName || emptyMultilang);
-    setSubjectLang(res.subject || emptyMultilang);
+    setSelectedResource({
+      ...res,
+      fileName: res.fileName || emptyMultilang,
+      subject: res.subject || emptyMultilang,
+      size: res.size || emptySize,
+    });
 
-    if (res.fileId) {
-      setFileList([
+    const updatedFileLists: Record<Language, any[]> = {
+      uz: [],
+      ru: [],
+      en: [],
+      ger: [],
+    };
+    const updatedPreviews: Record<Language, string> = {
+      uz: DEFAULT_IMAGE,
+      ru: DEFAULT_IMAGE,
+      en: DEFAULT_IMAGE,
+      ger: DEFAULT_IMAGE,
+    };
+
+    if (res.fileIdUZ) {
+      updatedFileLists.uz = [
         {
-          uid: res.fileId,
+          uid: res.fileIdUZ,
           name: res.fileName?.uz || "file",
           status: "done",
-          url: getFileUrl(res.fileId),
+          url: getFileUrl(res.fileIdUZ),
         },
-      ]);
-      setPreviewUrl(getFileUrl(res.fileId));
-    } else {
-      setFileList([]);
-      setPreviewUrl(DEFAULT_IMAGE);
+      ];
+      updatedPreviews.uz = getFileUrl(res.fileIdUZ);
+    }
+    if (res.fileIdRU) {
+      updatedFileLists.ru = [
+        {
+          uid: res.fileIdRU,
+          name: res.fileName?.ru || "file",
+          status: "done",
+          url: getFileUrl(res.fileIdRU),
+        },
+      ];
+      updatedPreviews.ru = getFileUrl(res.fileIdRU);
+    }
+    if (res.fileIdEN) {
+      updatedFileLists.en = [
+        {
+          uid: res.fileIdEN,
+          name: res.fileName?.en || "file",
+          status: "done",
+          url: getFileUrl(res.fileIdEN),
+        },
+      ];
+      updatedPreviews.en = getFileUrl(res.fileIdEN);
+    }
+    if (res.fileIdGER) {
+      updatedFileLists.ger = [
+        {
+          uid: res.fileIdGER,
+          name: res.fileName?.ger || "file",
+          status: "done",
+          url: getFileUrl(res.fileIdGER),
+        },
+      ];
+      updatedPreviews.ger = getFileUrl(res.fileIdGER);
     }
 
+    setFileLists(updatedFileLists);
+    setPreviews(updatedPreviews);
     setCurrentLang("uz");
     setDrawerOpen(true);
   };
 
-  const handleFileUpload = async (file: File) => {
+  // upload file to server (uses NEXT_PUBLIC_API_URL)
+  const uploadFileToServer = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
+    const resp = await fetch(`${BASE_API}/File/Uploadfile`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!resp.ok) throw new Error("Upload failed");
+    const json = await resp.json();
+    return json?.content;
+  };
 
+  const handleBeforeUpload = (lang: Language) => async (file: File) => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_REACT_API_URL}/File/Uploadfile`,
-        { method: "POST", body: formData }
-      );
-      const data = await response.json();
-      const content = data?.content;
-
+      const content = await uploadFileToServer(file);
       if (content?.id) {
         setSelectedResource((prev) => ({
           ...prev,
-          fileId: content.id,
           fileType: content.contentType,
-          size: content.size || "",
+          size: { ...(prev.size || emptySize), [lang]: content.size || "" },
+          ...(lang === "uz" && { fileIdUZ: content.id }),
+          ...(lang === "ru" && { fileIdRU: content.id }),
+          ...(lang === "en" && { fileIdEN: content.id }),
+          ...(lang === "ger" && { fileIdGER: content.id }),
         }));
-        setPreviewUrl(getFileUrl(content.id));
-        setFileList([
-          {
-            uid: content.id,
-            name: content.fileName,
-            status: "done",
-            url: getFileUrl(content.id),
-          },
-        ]);
-        message.success(`${file.name} uploaded successfully`);
+
+        setFileLists((prev) => ({
+          ...prev,
+          [lang]: [
+            {
+              uid: content.id,
+              name: content.fileName || file.name,
+              status: "done",
+              url: getFileUrl(content.id),
+            },
+          ],
+        }));
+        setPreviews((prev) => ({ ...prev, [lang]: getFileUrl(content.id) }));
+
+        message.success(`${file.name} uploaded for ${lang.toUpperCase()}`);
       } else {
         message.error(`${file.name} upload failed`);
       }
     } catch (err) {
       console.error(err);
-      message.error(`${file.name} upload failed`);
+      message.error(`Upload failed for ${lang.toUpperCase()}`);
     }
+    return false; // prevent default Upload behaviour
+  };
 
-    return false; // prevent default upload
+  const handleRemoveFile = (lang: Language) => () => {
+    setSelectedResource((prev) => ({
+      ...prev,
+      ...(lang === "uz" && { fileIdUZ: undefined }),
+      ...(lang === "ru" && { fileIdRU: undefined }),
+      ...(lang === "en" && { fileIdEN: undefined }),
+      ...(lang === "ger" && { fileIdGER: undefined }),
+      size: { ...(prev.size || emptySize), [lang]: "" },
+    }));
+
+    setFileLists((prev) => ({ ...prev, [lang]: [] }));
+    setPreviews((prev) => ({ ...prev, [lang]: DEFAULT_IMAGE }));
   };
 
   const handleSubmit = () => {
-    if (!selectedResource?.fileId) {
-      message.warning("Please upload a file");
+    if (
+      !selectedResource.fileIdUZ &&
+      !selectedResource.fileIdRU &&
+      !selectedResource.fileIdEN &&
+      !selectedResource.fileIdGER
+    ) {
+      message.warning("Please upload at least one file (per language)");
+      return;
+    }
+    if (!selectedResource.fileName || !selectedResource.subject) {
+      message.warning("Please fill names and subjects");
       return;
     }
 
-    const payload: ResourceItem = {
-      fileName: fileNameLang,
-      subject: subjectLang,
-      fileId: selectedResource.fileId,
+    const payload: any = {
+      id: selectedResource.id,
+      fileName: selectedResource.fileName,
+      subject: selectedResource.subject,
+      resourceCategoryId: selectedResource.resourceCategoryId,
+      publishedDate: selectedResource.publishedDate,
+      fileIdUZ: selectedResource.fileIdUZ,
+      fileIdRU: selectedResource.fileIdRU,
+      fileIdEN: selectedResource.fileIdEN,
+      fileIdGER: selectedResource.fileIdGER,
       fileType: selectedResource.fileType,
       size: selectedResource.size,
-      id: selectedResource?.id,
     };
 
-    if (selectedResource?.id) {
+    Object.keys(payload).forEach(
+      (k) => payload[k] === undefined && delete payload[k]
+    );
+
+    if (selectedResource.id) {
       updateResource.mutate(payload);
     } else {
       createResource.mutate(payload);
     }
   };
 
-  const columns = [
-    { title: "ID", dataIndex: "id", key: "id" },
-    {
-      title: "File Name (Uz)",
-      dataIndex: ["fileName", "uz"],
-      key: "fileNameUz",
-    },
-    { title: "Subject (Uz)", dataIndex: ["subject", "uz"], key: "subjectUz" },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_: any, record: ResourceItem) => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button
-            icon={<EyeOutlined />}
-            onClick={() => {
-              setSelectedResource(
-                record || { fileName: emptyMultilang, subject: emptyMultilang }
-              );
-              setModalOpen(true);
-            }}
-          />
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => openDrawerForEdit(record)}
-          />
-          <Popconfirm
-            title="Are you sure to delete?"
-            onConfirm={() => deleteResource.mutate(`${record.id}`)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </div>
-      ),
-    },
-  ];
+  // file preview component (image or icon). Ensure consistent width/height
+  const FilePreview: React.FC<{ url: string; fileType?: string }> = ({
+    url,
+    fileType,
+  }) => {
+    if (isImage(fileType)) {
+      return (
+        <AntdImage
+          src={url || DEFAULT_IMAGE}
+          width={160}
+          style={{
+            height: 120,
+            objectFit: "cover",
+            borderRadius: 8,
+            border: "1px solid #eee",
+          }}
+          fallback={DEFAULT_IMAGE}
+          alt="preview"
+        />
+      );
+    }
+    return (
+      <div
+        style={{
+          width: 160,
+          height: 120,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 8,
+          border: "1px solid #eee",
+        }}
+      >
+        {getFileIcon(fileType)}
+      </div>
+    );
+  };
+
+  const columns = useMemo(
+    () => [
+      { title: "ID", dataIndex: "id", key: "id" },
+      {
+        title: "File Name (UZ)",
+        dataIndex: ["fileName", "uz"],
+        key: "fileNameUz",
+      },
+      { title: "Subject (UZ)", dataIndex: ["subject", "uz"], key: "subjectUz" },
+      {
+        title: "Category",
+        dataIndex: "resourceCategoryId",
+        key: "category",
+        render: (catId: number) => {
+          const cat = (categories || []).find((c: any) => c.id === catId);
+          return <span>{cat?.categoryName?.uz ?? "-"}</span>;
+        },
+      },
+      {
+        title: "Actions",
+        key: "actions",
+        render: (_: any, record: ResourceItem) => (
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button
+              icon={<EyeOutlined />}
+              onClick={() => {
+                setSelectedResource(record);
+                // populate previews for modal
+                setPreviews({
+                  uz: record.fileIdUZ
+                    ? getFileUrl(record.fileIdUZ)
+                    : DEFAULT_IMAGE,
+                  ru: record.fileIdRU
+                    ? getFileUrl(record.fileIdRU)
+                    : DEFAULT_IMAGE,
+                  en: record.fileIdEN
+                    ? getFileUrl(record.fileIdEN)
+                    : DEFAULT_IMAGE,
+                  ger: record.fileIdGER
+                    ? getFileUrl(record.fileIdGER)
+                    : DEFAULT_IMAGE,
+                });
+                setModalOpen(true);
+              }}
+            />
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => openDrawerForEdit(record)}
+            />
+            <Popconfirm
+              title="Are you sure to delete?"
+              onConfirm={() => deleteResource.mutate(`${record.id}`)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </div>
+        ),
+      },
+    ],
+    [categories]
+  );
 
   return (
     <div>
       <Row justify="space-between" style={{ marginBottom: 16 }}>
         <Tabs
           activeKey={currentLang}
-          onChange={(key) => setCurrentLang(key as any)}
+          onChange={(key) => setCurrentLang(key as Language)}
           items={languages.map((lang) => ({
             key: lang,
             label: lang.toUpperCase(),
           }))}
         />
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={openDrawerForCreate}
-        >
-          Create Resource
-        </Button>
+        <div style={{ marginLeft: 12 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={openDrawerForCreate}
+          >
+            Create Resource
+          </Button>
+        </div>
       </Row>
 
       <Card>
@@ -283,113 +496,191 @@ const ResourceManager: React.FC = () => {
 
       <Drawer
         title={selectedResource?.id ? "Edit Resource" : "Create Resource"}
-        width={600}
+        width={720}
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
+        destroyOnClose
       >
-        <Tabs
-          activeKey={currentLang}
-          onChange={(key) => setCurrentLang(key as any)}
-        >
-          {languages.map((lang) => (
-            <TabPane tab={lang.toUpperCase()} key={lang}>
-              <Form layout="vertical" onFinish={handleSubmit}>
-                <Form.Item
-                  label={`File Name (${lang})`}
-                  rules={[{ required: true }]}
-                >
+        <Form layout="vertical" onFinish={handleSubmit}>
+          <Form.Item label="Category" required>
+            <Select
+              placeholder="Select category"
+              value={selectedResource.resourceCategoryId}
+              loading={categoriesLoading}
+              onChange={(val: number) =>
+                setSelectedResource((prev) => ({
+                  ...prev,
+                  resourceCategoryId: val,
+                }))
+              }
+            >
+              {(categories || []).map((c: any) => (
+                <Option key={c.id} value={c.id}>
+                  {c.categoryName?.uz ?? c.id}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Tabs
+            activeKey={currentLang}
+            onChange={(key) => setCurrentLang(key as Language)}
+          >
+            {languages.map((lang) => (
+              <TabPane tab={lang.toUpperCase()} key={lang}>
+                <Form.Item label={`File Name (${lang.toUpperCase()})`} required>
                   <Input
-                    value={fileNameLang[lang] || ""}
+                    value={selectedResource.fileName?.[lang] ?? ""}
                     onChange={(e) =>
-                      setFileNameLang({
-                        ...fileNameLang,
-                        [lang]: e.target.value,
-                      })
-                    }
-                  />
-                </Form.Item>
-                <Form.Item
-                  label={`Subject (${lang})`}
-                  rules={[{ required: true }]}
-                >
-                  <Input
-                    value={subjectLang[lang] || ""}
-                    onChange={(e) =>
-                      setSubjectLang({ ...subjectLang, [lang]: e.target.value })
+                      setSelectedResource((prev) => ({
+                        ...prev,
+                        fileName: {
+                          ...(prev.fileName ?? emptyMultilang),
+                          [lang]: e.target.value,
+                        },
+                      }))
                     }
                   />
                 </Form.Item>
 
-                {lang === currentLang && (
-                  <>
-                    <Form.Item label="Upload File" required>
-                      <Upload
-                        beforeUpload={handleFileUpload}
-                        fileList={fileList}
-                        listType="picture-card"
-                        onRemove={() => {
-                          setFileList([]);
-                          setPreviewUrl(DEFAULT_IMAGE);
-                          setSelectedResource((prev) => ({
-                            ...prev,
-                            fileId: "",
-                            fileType: "",
-                            size: "",
-                          }));
+                <Form.Item label={`Subject (${lang.toUpperCase()})`} required>
+                  <Input
+                    value={selectedResource.subject?.[lang] ?? ""}
+                    onChange={(e) =>
+                      setSelectedResource((prev) => ({
+                        ...prev,
+                        subject: {
+                          ...(prev.subject ?? emptyMultilang),
+                          [lang]: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </Form.Item>
+
+                <Form.Item label={`Upload File (${lang.toUpperCase()})`}>
+                  <Upload
+                    beforeUpload={handleBeforeUpload(lang)}
+                    fileList={fileLists[lang]}
+                    onRemove={handleRemoveFile(lang)}
+                    listType="picture"
+                  >
+                    {fileLists[lang].length === 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
                         }}
                       >
-                        {fileList.length === 0 && (
-                          <div>
-                            <UploadOutlined />
-                            <div style={{ marginTop: 8 }}>Upload</div>
-                          </div>
-                        )}
-                      </Upload>
-                      <div style={{ marginTop: 10 }}>
-                        <img src={previewUrl} width={80} alt="preview" />
+                        <UploadOutlined />
+                        <div>Upload</div>
                       </div>
-                    </Form.Item>
+                    )}
+                  </Upload>
 
-                    <Button type="primary" htmlType="submit">
-                      {selectedResource?.id ? "Update" : "Create"}
-                    </Button>
-                  </>
-                )}
-              </Form>
-            </TabPane>
-          ))}
-        </Tabs>
+                  <div style={{ marginTop: 10 }}>
+                    {/* fallback if preview URL unreachable */}
+                    <img
+                      src={previews[lang]}
+                      width={160}
+                      height={120}
+                      style={{
+                        objectFit: "cover",
+                        borderRadius: 8,
+                        border: "1px solid #eee",
+                      }}
+                      alt={`${lang}-preview`}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          DEFAULT_IMAGE;
+                      }}
+                    />
+                  </div>
+                </Form.Item>
+              </TabPane>
+            ))}
+          </Tabs>
+
+          <Form.Item>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Button htmlType="button" onClick={() => setDrawerOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit" onClick={handleSubmit}>
+                {selectedResource?.id ? "Update" : "Create"}
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
       </Drawer>
 
       <Modal
-        title={selectedResource?.fileName?.[currentLang] || ""}
+        title={
+          selectedResource?.fileName?.uz ||
+          selectedResource?.fileName?.en ||
+          "Resource"
+        }
         open={modalOpen}
         footer={<Button onClick={() => setModalOpen(false)}>Close</Button>}
         onCancel={() => setModalOpen(false)}
+        width={800}
       >
         {selectedResource && (
           <div>
             <Descriptions bordered column={2}>
-              <Descriptions.Item label="File Name">
-                {selectedResource.fileName?.[currentLang] || ""}
+              <Descriptions.Item label="File Name (UZ)">
+                {selectedResource.fileName?.uz || "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="Subject">
-                {selectedResource.subject?.[currentLang] || ""}
+              <Descriptions.Item label="Subject (UZ)">
+                {selectedResource.subject?.uz || "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="File ID">
-                {selectedResource.fileId || ""}
+              <Descriptions.Item label="File IDs">
+                {selectedResource.fileIdUZ ||
+                  selectedResource.fileIdRU ||
+                  selectedResource.fileIdEN ||
+                  selectedResource.fileIdGER ||
+                  "-"}
               </Descriptions.Item>
               <Descriptions.Item label="File Type">
-                {selectedResource.fileType || ""}
+                {selectedResource.fileType || "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Size">
-                {selectedResource.size || ""}
+                {JSON.stringify(selectedResource.size) || "-"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Category">
+                {(categories || []).find(
+                  (c: any) => c.id === selectedResource.resourceCategoryId
+                )?.categoryName?.uz ?? "-"}
               </Descriptions.Item>
             </Descriptions>
-            <Divider>Preview</Divider>
-            {selectedResource.fileId && (
-              <Image src={getFileUrl(selectedResource.fileId)} width={200} />
-            )}
+
+            <Divider>Preview (per language)</Divider>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {languages.map((lang) => {
+                const id =
+                  lang === "uz"
+                    ? selectedResource.fileIdUZ
+                    : lang === "ru"
+                    ? selectedResource.fileIdRU
+                    : lang === "en"
+                    ? selectedResource.fileIdEN
+                    : selectedResource.fileIdGER;
+                const url = id ? getFileUrl(id) : DEFAULT_IMAGE;
+                return (
+                  <div key={lang} style={{ textAlign: "center" }}>
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                      {lang.toUpperCase()}
+                    </div>
+                    <FilePreview
+                      url={url}
+                      fileType={selectedResource.fileType}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </Modal>
