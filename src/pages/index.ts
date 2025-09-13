@@ -12,7 +12,6 @@ const Settings = lazy(() => import("./Settings"));
 const NotFound = lazy(() => import("./Not-Found"));
 const Publisher = lazy(() => import("./Publisher"));
 const SignIn = lazy(() => import("./Auth/Sign-In"));
-const OurResource = lazy(() => import("./OurResource"));
 const OurCategory = lazy(() => import("./OurCategory"));
 const OurPartners = lazy(() => import("./OurPartners"));
 const NewsCategory = lazy(() => import("./NewsCategory"));
@@ -31,7 +30,6 @@ export {
   NotFound,
   Settings,
   Publisher,
-  OurResource,
   OurCategory,
   OurPartners,
   NewsCategory,

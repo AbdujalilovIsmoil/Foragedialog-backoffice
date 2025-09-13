@@ -189,12 +189,6 @@ function Layout() {
           path: "/pages/our-partners",
           icon: CrownOutlined,
         },
-        {
-          id: "5-4",
-          label: "Our Resource",
-          icon: DatabaseOutlined,
-          path: "/pages/our-resource",
-        },
       ],
     },
   ];
