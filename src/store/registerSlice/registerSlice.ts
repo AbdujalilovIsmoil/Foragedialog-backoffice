@@ -1,13 +1,9 @@
 import { storage } from "@/services";
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
+import type { loginInterface } from "@/types/loginInterface";
 
-export type registerType = {
-  token: string | null | undefined;
-  username: string | null | undefined;
-};
-
-const initialState: registerType = {
+const initialState: Partial<loginInterface> = {
   username: "",
   token: storage.get("token") || "",
 };
@@ -18,7 +14,10 @@ export const registerSlice = createSlice({
   name: "register",
   initialState,
   reducers: {
-    getToken: (state: registerType, action: PayloadAction<registerType>) => {
+    getToken: (
+      state: Partial<loginInterface>,
+      action: PayloadAction<loginInterface>
+    ) => {
       storage.set("token", action.payload.token);
       storage.set("username", action.payload.username);
       return {
@@ -27,7 +26,7 @@ export const registerSlice = createSlice({
         username: storage.get("username"),
       };
     },
-    clearToken: (state: registerType) => {
+    clearToken: (state: Partial<loginInterface>) => {
       storage.clear();
       return {
         ...state,

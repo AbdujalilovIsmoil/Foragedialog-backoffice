@@ -1,36 +1,31 @@
+import { toastAlert } from "@/helpers";
+import type { MultilangText } from "@/types";
 import { CKEditor, Button } from "@/components";
 import { useState, type ChangeEvent } from "react";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
-import {
-  Drawer,
-  Select,
-  Input,
-  Form,
-  Row,
-  Col,
-  Upload,
-  Table,
-  Tabs,
-  message,
-  Image,
-  Modal,
-  Tag,
-  Descriptions,
-  Divider,
-} from "antd";
 import {
   EyeOutlined,
   EditOutlined,
   UploadOutlined,
   DeleteOutlined,
 } from "@/assets/antd-design-icons";
-
-interface MultilangText {
-  uz: string;
-  ru: string;
-  en: string;
-  ger: string;
-}
+import {
+  Row,
+  Col,
+  Tag,
+  Form,
+  Tabs,
+  Input,
+  Image,
+  Modal,
+  Table,
+  Drawer,
+  Select,
+  Upload,
+  message,
+  Divider,
+  Descriptions,
+} from "antd";
 
 interface NewsValues {
   id?: string | number;
@@ -73,14 +68,17 @@ const News: React.FC = () => {
     path: "/Blog/GetAll",
     queryKey: "blog",
   });
+
   const { data: categoriesData } = useGet({
     queryKey: "categories",
     path: "/NewsCategory/GetAll",
   });
+
   const { data: tagsData } = useGet({
     queryKey: "tags",
     path: "/Tags/GetAll",
   });
+
   const { data: publishersData } = useGet({
     queryKey: "publishers",
     path: "/Publisher/GetAll",
@@ -92,7 +90,7 @@ const News: React.FC = () => {
     onSuccess: () => {
       setVisible(false);
       refetchNews();
-      message.success("Blog created successfully");
+      toastAlert({ typeInfo: "success", content: "Blog created successfully" });
     },
   });
   const putNews = usePut({
@@ -101,7 +99,7 @@ const News: React.FC = () => {
     onSuccess: () => {
       setVisible(false);
       refetchNews();
-      message.success("Blog updated successfully");
+      toastAlert({ typeInfo: "success", content: "Blog updated successfully" });
     },
   });
   const deleteNews = useDelete({
@@ -110,7 +108,7 @@ const News: React.FC = () => {
     queryKey: ["blog"],
     onSuccess: () => {
       refetchNews();
-      message.success("Blog deleted successfully");
+      toastAlert({ typeInfo: "success", content: "Blog deleted successfully" });
     },
   });
 
@@ -227,13 +225,13 @@ const News: React.FC = () => {
   ];
 
   return (
-    <div>
+    <>
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
           marginBottom: 16,
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         <Tabs
@@ -249,22 +247,21 @@ const News: React.FC = () => {
         </Button>
       </div>
       <Table
+        rowKey="key"
         columns={columns}
+        style={{ marginBottom: 16 }}
         dataSource={(newsData || []).map((item: any) => ({
           ...item,
           key: item.id,
         }))}
-        rowKey="key"
-        style={{ marginBottom: 16 }}
       />
-      {/* Drawer for create/edit */}
       <Drawer
-        title={values.id ? "Edit BLog" : "Create Blog"}
-        placement="right"
         width={900}
-        onClose={() => setVisible(false)}
         open={visible}
+        placement="right"
+        onClose={() => setVisible(false)}
         bodyStyle={{ padding: 16, height: "100%" }}
+        title={values.id ? "Edit BLog" : "Create Blog"}
       >
         <Tabs
           activeKey={currentLang}
@@ -277,7 +274,12 @@ const News: React.FC = () => {
         <Form layout="vertical" onFinish={handleSubmit}>
           <Row gutter={16}>
             <Col span={24}>
-              <Form.Item label="Subject">
+              <Form.Item
+                label="Subject"
+                rules={[
+                  { required: true, message: "Please enter your Subject!" },
+                ]}
+              >
                 <Input
                   value={values.subject[currentLang]}
                   onChange={(e) => handleInputChange(e, "subject", currentLang)}
@@ -285,7 +287,12 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label="Title">
+              <Form.Item
+                label="Title"
+                rules={[
+                  { required: true, message: "Please enter your Title!" },
+                ]}
+              >
                 <Input
                   value={values.title[currentLang]}
                   onChange={(e) => handleInputChange(e, "title", currentLang)}
@@ -293,7 +300,10 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label="Text">
+              <Form.Item
+                label="Text"
+                rules={[{ required: true, message: "Please enter your Text!" }]}
+              >
                 <CKEditor
                   key={currentLang}
                   ckeDitorData={values.text[currentLang]}
@@ -307,7 +317,12 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label="Categories">
+              <Form.Item
+                label="Categories"
+                rules={[
+                  { required: true, message: "Please enter your Categories!" },
+                ]}
+              >
                 <Select
                   mode="multiple"
                   value={values.categories}
@@ -322,7 +337,10 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label="Tags">
+              <Form.Item
+                label="Tags"
+                rules={[{ required: true, message: "Please enter your Tags!" }]}
+              >
                 <Select
                   mode="multiple"
                   value={values.tags}
@@ -339,7 +357,12 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label="Publisher">
+              <Form.Item
+                label="Publisher"
+                rules={[
+                  { required: true, message: "Please enter your Publisher!" },
+                ]}
+              >
                 <Select
                   value={values.publisherId}
                   onChange={(v) => handleSelectChange("publisherId", v)}
@@ -353,7 +376,12 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label="Images">
+              <Form.Item
+                label="Images"
+                rules={[
+                  { required: true, message: "Please enter your Images!" },
+                ]}
+              >
                 <Upload
                   beforeUpload={handleImageUpload}
                   multiple
@@ -371,15 +399,15 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item label="Reading Time">
-                <Input
-                  value={values.readingTime}
-                  onChange={(e) => handleInputChange(e, "readingTime")}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item label="Published Date">
+              <Form.Item
+                label="Published Date"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter your Published Date!",
+                  },
+                ]}
+              >
                 <Input
                   type="datetime-local"
                   value={values.publishedDate.slice(0, 16)}
@@ -395,22 +423,20 @@ const News: React.FC = () => {
           </Row>
         </Form>
       </Drawer>
-      {/* Modal for viewing news */}
       <Modal
-        open={viewModalVisible} // ⚠️ Agar AntD v5 bo‘lsa "visible" emas, "open"
+        width={1000}
+        open={viewModalVisible}
+        bodyStyle={{ padding: "24px" }}
+        onCancel={() => setViewModalVisible(false)}
         title={viewItem?.title[currentLang] || "News Details"}
         footer={
           <Button type="primary" onClick={() => setViewModalVisible(false)}>
             Close
           </Button>
         }
-        onCancel={() => setViewModalVisible(false)}
-        width={1000}
-        bodyStyle={{ padding: "24px" }}
       >
         {viewItem && (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            {/* General Info */}
             <Descriptions
               bordered
               column={2}
@@ -435,8 +461,7 @@ const News: React.FC = () => {
               </Descriptions.Item>
             </Descriptions>
 
-            {/* Text */}
-            <div>
+            <>
               <Divider orientation="left">Text</Divider>
               <div
                 style={{
@@ -449,10 +474,9 @@ const News: React.FC = () => {
                 }}
                 dangerouslySetInnerHTML={{ __html: viewItem.text[currentLang] }}
               />
-            </div>
+            </>
 
-            {/* Categories & Tags */}
-            <div>
+            <>
               <Divider orientation="left">Categories & Tags</Divider>
               <div style={{ marginBottom: 12 }}>
                 {(viewItem.categories || []).map((catId) => {
@@ -474,10 +498,9 @@ const News: React.FC = () => {
                   ) : null;
                 })}
               </div>
-            </div>
+            </>
 
-            {/* Images */}
-            <div>
+            <>
               <Divider orientation="left">Images</Divider>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {viewItem.images.map((id) => (
@@ -492,11 +515,11 @@ const News: React.FC = () => {
                   />
                 ))}
               </div>
-            </div>
+            </>
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 };
 

@@ -23,19 +23,21 @@ import {
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const token = JSON.parse(storage.get("data") as string);
+  const token = storage.get("token");
   const lang: string = location.pathname.split("/")[1];
   const [correctLang, setCorrectLang] = useState<string>("uz");
 
   useEffect(() => {
     if (!token) navigate(`${correctLang}/pages/sign-in`);
 
+    console.log(token);
+  }, [token]);
+
+  useEffect(() => {
     if (lang === "") navigate("uz");
 
     if (lang === "uz" || lang === "ru" || lang === "en") setCorrectLang(lang);
-  }, [lang, token]);
-
-  console.log(storage.get('token'))
+  }, [lang]);
 
   return (
     <Suspense>
