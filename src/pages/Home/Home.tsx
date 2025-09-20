@@ -1,7 +1,7 @@
 import { get } from "lodash";
 import { useState } from "react";
 import CountUp from "react-countup";
-import { Button } from "@/components";
+import { Button, Input } from "@/components";
 import { useGet, useDelete, usePost, usePut } from "@/hooks";
 import {
   Row,
@@ -11,7 +11,6 @@ import {
   Tag,
   Drawer,
   Form,
-  Input,
   Select,
   Popconfirm,
 } from "antd";

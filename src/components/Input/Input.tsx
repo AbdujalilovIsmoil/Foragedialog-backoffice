@@ -1,8 +1,8 @@
-import { Input as AntdInput } from "antd";
 import type { InputProps } from "antd";
+import { Input as AntdInput } from "antd";
 
-function Input(props: InputProps) {
+const Input = (props: InputProps) => {
   return <AntdInput {...props} />;
-}
+};
 
 export default Input;

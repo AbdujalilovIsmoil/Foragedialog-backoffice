@@ -1,12 +1,12 @@
-import { Button } from "@/components";
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
+import { Button, Input } from "@/components";
 import type { TableProps, TabsProps } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
 import { CategorySection, CategoryTopContainer } from "./style";
+import { Col, Row, Form, Tabs, Table, Drawer, Tooltip } from "antd";
 import { DeleteOutlined, EditOutlined } from "@/assets/antd-design-icons";
-import { Col, Row, Form, Tabs, Table, Input, Drawer, Tooltip } from "antd";
 
 type ColumnsType<T extends object = object> = TableProps<T>["columns"];
 
@@ -33,7 +33,6 @@ const Category: React.FC = () => {
     if (!searchParams.get("lang") || !searchParams.get("current")) {
       setSearchParams({ lang: "uz", current: "1" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { data, isLoading } = useGet({
