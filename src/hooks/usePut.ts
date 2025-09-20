@@ -21,10 +21,9 @@ const usePost = ({
   const queryClient = useQueryClient();
 
   const response = useMutation({
-    mutationFn: (data: unknown) => {
-      return api.put(path, data).then((response) => {
-        return get(response, "data");
-      });
+    mutationFn: async (data: unknown) => {
+      const response = await api.put(path, data);
+      return get(response, "data");
     },
     onError: (error) => {
       onError(error);

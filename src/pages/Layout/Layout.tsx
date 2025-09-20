@@ -1,7 +1,11 @@
+import dayjs from "dayjs";
+import { useState } from "react";
 import { storage } from "@/services";
 import { Button } from "@/components";
 import { SiteLogo } from "@/assets/images";
 import { Layout as LayoutStyles } from "@/assets/styles";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LogoutOutlined,
   UserOutlined,
@@ -16,8 +20,7 @@ import {
   FileTextOutlined,
   ApartmentOutlined,
   CrownOutlined,
-} from "@ant-design/icons";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+} from "@/assets/antd-design-icons";
 import {
   Layout as AntdLayout,
   Avatar,
@@ -29,9 +32,6 @@ import {
   ConfigProvider,
   Image,
 } from "antd";
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
-import { useState } from "react";
 
 const siderStyle: React.CSSProperties = {
   top: 0,

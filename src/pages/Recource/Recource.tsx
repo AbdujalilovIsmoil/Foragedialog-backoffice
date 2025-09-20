@@ -1,6 +1,5 @@
-"use client";
-
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useGet, usePost, usePut, useDelete } from "@/hooks";
 import {
   Row,
   Card,
@@ -29,8 +28,7 @@ import {
   FileWordOutlined,
   FileExcelOutlined,
   FileUnknownOutlined,
-} from "@ant-design/icons";
-import { useGet, usePost, usePut, useDelete } from "@/hooks";
+} from "@/assets/antd-design-icons";
 
 const { TabPane } = Tabs;
 const { Option } = Select;

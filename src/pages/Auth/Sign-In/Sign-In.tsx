@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import styled from "styled-components";
 import { Form, Input, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { LockOutlined, UserOutlined } from "@/assets/antd-design-icons";
 
 const { Title } = Typography;
 
@@ -75,6 +75,7 @@ const SignIn = () => {
     code: number;
     content: successContent;
     error: null | undefined;
+    token: string;
     total: null | undefined;
     modelStateError: null | undefined;
   }
@@ -93,8 +94,12 @@ const SignIn = () => {
     },
     onSuccess: (data: unknown) => {
       const typeData = data as successData;
-      const { token, userName } = typeData.content;
-      const privateData = { token, userName, id: typeData.id };
+      const { userName } = typeData.content;
+      const privateData = { userName, id: typeData.id };
+
+      // storage.set("token", privateData.token);
+
+      console.log(data);
 
       toast.success("You have logged in!", toastProperties);
 

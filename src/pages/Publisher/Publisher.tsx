@@ -1,15 +1,15 @@
+import { get } from "lodash";
 import { Button } from "@/components";
 import { toast } from "react-toastify";
 import type { TableProps, UploadFile } from "antd";
 import { useState, type ChangeEvent } from "react";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
-import {
-  UploadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons";
 import { Col, Row, Table, Drawer, Form, Input, Upload, Image } from "antd";
-import { get } from "lodash";
+import {
+  EditOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+} from "@/assets/antd-design-icons";
 
 interface Publisher {
   id: number | string;

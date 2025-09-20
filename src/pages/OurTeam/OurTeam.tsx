@@ -1,14 +1,15 @@
+import { get } from "lodash";
 import { Button } from "@/components";
 import { toast } from "react-toastify";
-import type { TableProps, TabsProps, UploadFile } from "antd";
 import { useSearchParams } from "react-router-dom";
-import { useDelete, useGet, usePost, usePut } from "@/hooks";
 import { useState, type ChangeEvent } from "react";
+import { useDelete, useGet, usePost, usePut } from "@/hooks";
+import type { TableProps, TabsProps, UploadFile } from "antd";
 import {
   DeleteOutlined,
   EditOutlined,
   UploadOutlined,
-} from "@ant-design/icons";
+} from "@/assets/antd-design-icons";
 import {
   Col,
   Row,
@@ -21,7 +22,6 @@ import {
   Upload,
   Image,
 } from "antd";
-import { get } from "lodash";
 
 type ColumnsType<T extends object = object> = TableProps<T>["columns"];
 

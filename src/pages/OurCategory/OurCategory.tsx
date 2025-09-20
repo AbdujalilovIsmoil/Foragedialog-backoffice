@@ -1,14 +1,14 @@
 import { Button } from "@/components";
 import { toast } from "react-toastify";
-import type { TableProps, TabsProps, UploadFile } from "antd";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
-import { useEffect, useState } from "react";
+import type { TableProps, TabsProps, UploadFile } from "antd";
 import {
   DeleteOutlined,
   EditOutlined,
   UploadOutlined,
-} from "@ant-design/icons";
+} from "@/assets/antd-design-icons";
 import {
   Col,
   Row,

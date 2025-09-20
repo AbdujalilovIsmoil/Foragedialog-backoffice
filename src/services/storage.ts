@@ -4,36 +4,36 @@ const storage = {
 
     if (key && value) {
       if (typeof value === "string") {
-        return window.localStorage.setItem(key, value);
+        return window.sessionStorage.setItem(key, value);
       } else {
-        return window.localStorage.setItem(key, JSON.stringify(value));
+        return window.sessionStorage.setItem(key, JSON.stringify(value));
       }
     }
   },
   get: (key: string) => {
     if (key) {
-      return localStorage.getItem(key) as string;
+      return window.sessionStorage.getItem(key) as string;
     }
   },
   remove: (key: string) => {
     if (key) {
-      return window.localStorage.removeItem(key);
+      return window.sessionStorage.removeItem(key);
     }
   },
   key: (index: number | string) => {
     if (typeof index !== "number") {
-      return window.localStorage.key(Number(index));
+      return window.sessionStorage.key(Number(index));
     }
 
     if (typeof index === "number") {
-      return window.localStorage.key(index);
+      return window.sessionStorage.key(index);
     }
   },
   length: () => {
-    return window.localStorage.length;
+    return window.sessionStorage.length;
   },
   clear: () => {
-    return window.localStorage.clear();
+    return window.sessionStorage.clear();
   },
 };
 

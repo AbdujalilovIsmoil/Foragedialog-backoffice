@@ -1,9 +1,9 @@
 import { Button } from "@/components";
 import { toast } from "react-toastify";
-import { useEffect, useState } from "react";
 import type { TableProps, TabsProps } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
+import { useEffect, useState } from "react";
 import { CategorySection, CategoryTopContainer } from "./style";
 import { DeleteOutlined, EditOutlined } from "@/assets/antd-design-icons";
 import { Col, Row, Form, Tabs, Table, Input, Drawer, Tooltip } from "antd";
@@ -17,8 +17,6 @@ interface DataType {
   categoryName: Record<LangKey, string>;
 }
 
-const langs: LangKey[] = ["uz", "ru", "en", "ger"];
-
 const Category: React.FC = () => {
   const [isPost, setIsPost] = useState(true);
   const [open, setOpen] = useState<boolean>(false);
@@ -30,43 +28,37 @@ const Category: React.FC = () => {
   const [currentLang, setCurrentLang] = useState<LangKey>(langParam);
 
   useEffect(() => {
+    // ✅ reload bo‘lsa ham default param o‘rnatiladi
     if (!searchParams.get("lang") || !searchParams.get("current")) {
       setSearchParams({ lang: "uz", current: "1" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   const { data, isLoading } = useGet({
-    queryKey: "category",
-    path: "/NewsCategory/GetAll",
+    queryKey: "resource-category", // ✅ unikal bo‘lishi kerak
+    path: "/ResourceCategory/GetAll",
   });
 
   const mutationHook = isPost ? usePost : usePut;
 
   const { mutate } = mutationHook({
-    queryKey: ["category"],
-    path: `/NewsCategory/${isPost ? "Create" : "Update"}`,
-    successText: `Success ${isPost ? "Create" : "Update"} News Category`,
+    queryKey: ["resource-category"],
     onSuccess: async () => {
-      // server muvaffaqiyatli bo'lsa formni tozalaymiz va drawerni yopamiz
+      onClose();
       form.resetFields();
-      setIsPost(true);
-      setOpen(false);
-      // agar kerak bo'lsa, refetch useGet hook ichida avtomatik bo'ladi (react-query)
     },
+    path: `/ResourceCategory/${isPost ? "Create" : "Update"}`,
+    successText: `Success ${isPost ? "Create" : "Update"} Resource Category`,
   });
 
   const mutateDelete = useDelete({
-    queryKey: ["category"],
-    path: "/NewsCategory/Delete",
-    successText: "Deleted News Category successfully",
+    queryKey: ["resource-category"],
+    path: "/ResourceCategory/Delete",
+    successText: "Deleted Resource successfully",
     onError: async (error: unknown) => {
       if (error instanceof Error) {
         toast.error(error.message, { pauseOnHover: false });
       }
-    },
-    onSuccess: async () => {
-      // agar delete muvaffaqiyatli bo'lsa
     },
   });
 
@@ -82,8 +74,7 @@ const Category: React.FC = () => {
   const showDrawer = () => {
     setOpen(true);
     setIsPost(true);
-    // create uchun bo'sh qiymatlar o'rnatamiz (id = 0)
-    form.setFieldsValue({ id: 0, uz: "", ru: "", en: "", ger: "" });
+    form.resetFields();
   };
 
   const onClose = () => {
@@ -94,21 +85,18 @@ const Category: React.FC = () => {
   const openDrawData = (record: DataType) => {
     setOpen(true);
     setIsPost(false);
-    // record.categoryName: { uz, ru, en, ger }
     form.setFieldsValue({
-      id: Number(record.id),
-      uz: record.categoryName?.uz ?? "",
-      ru: record.categoryName?.ru ?? "",
-      en: record.categoryName?.en ?? "",
-      ger: record.categoryName?.ger ?? "",
+      ...record.categoryName,
+      id: record.id,
     });
   };
 
   const columns: ColumnsType<DataType> = [
     {
-      title: "Category",
+      title: "Resource Category",
       dataIndex: "categoryName",
       render: (value: DataType["categoryName"]) => {
+        if (!value) return null;
         return (
           <Tooltip title={value[currentLang]}>{value[currentLang]}</Tooltip>
         );
@@ -128,7 +116,7 @@ const Category: React.FC = () => {
         <Button
           type="text"
           size="large"
-          onClick={() => mutateDelete.mutate(`${Number(id)}`)}
+          onClick={() => mutateDelete.mutate(id)}
         >
           <DeleteOutlined style={{ color: "red" }} />
         </Button>
@@ -159,7 +147,7 @@ const Category: React.FC = () => {
 
       <Table<DataType>
         columns={columns}
-        dataSource={Array.isArray(data) ? data : []}
+        dataSource={Array.isArray(data) ? data : []} // ✅ fallback
         loading={isLoading}
         pagination={{
           current: Number(current),
@@ -174,7 +162,7 @@ const Category: React.FC = () => {
         width={500}
         open={open}
         onClose={onClose}
-        title={isPost ? "Create News Category" : "Update News Category"}
+        title={isPost ? "Create Resource Category" : "Update Resource Category"}
         styles={{ body: { paddingBottom: 80 } }}
       >
         <Tabs
@@ -187,42 +175,32 @@ const Category: React.FC = () => {
         <Form
           form={form}
           layout="vertical"
-          onFinish={() => {
-            const allValues = form.getFieldsValue();
-            const payload = {
-              id: isPost ? 0 : Number(allValues.id || 0),
+          onFinish={(values) =>
+            mutate({
+              id: values.id,
               categoryName: {
-                uz: String(allValues.uz || ""),
-                ru: String(allValues.ru || ""),
-                en: String(allValues.en || ""),
-                ger: String(allValues.ger || ""),
+                uz: values.uz,
+                ru: values.ru,
+                en: values.en,
+                ger: values.ger,
               },
-            };
-            mutate(payload);
-          }}
+            })
+          }
         >
           <Form.Item name="id" hidden>
             <Input />
           </Form.Item>
 
           <Row gutter={16}>
-            {langs.map((lang) => (
-              <Col
-                span={24}
-                key={lang}
-                style={{ display: currentLang === lang ? "block" : "none" }}
+            <Col span={24}>
+              <Form.Item
+                label="Category"
+                name={currentLang}
+                rules={[{ required: true, message: "Please enter category" }]}
               >
-                <Form.Item
-                  label="News Category"
-                  name={lang}
-                  rules={[
-                    { required: true, message: "Please enter news category" },
-                  ]}
-                >
-                  <Input placeholder="Please enter news category" />
-                </Form.Item>
-              </Col>
-            ))}
+                <Input placeholder="Please enter category" />
+              </Form.Item>
+            </Col>
           </Row>
 
           <Button type="primary" htmlType="submit">

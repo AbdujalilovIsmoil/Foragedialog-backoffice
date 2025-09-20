@@ -33,7 +33,9 @@ function App() {
     if (lang === "") navigate("uz");
 
     if (lang === "uz" || lang === "ru" || lang === "en") setCorrectLang(lang);
-  }, [lang]);
+  }, [lang, token]);
+
+  console.log(storage.get('token'))
 
   return (
     <Suspense>

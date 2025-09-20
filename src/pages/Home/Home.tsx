@@ -1,4 +1,7 @@
+import { get } from "lodash";
 import { useState } from "react";
+import CountUp from "react-countup";
+import { useGet, useDelete, usePost, usePut } from "@/hooks";
 import {
   Row,
   Col,
@@ -20,10 +23,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
-} from "@ant-design/icons";
-import CountUp from "react-countup";
-import { useGet, useDelete, usePost, usePut } from "@/hooks";
-import { get } from "lodash";
+} from "@/assets/antd-design-icons";
 
 const { Option } = Select;
 
@@ -33,7 +33,6 @@ const Home = () => {
   const news = useGet({ queryKey: "news", path: "/News/GetAll" });
   const resource = useGet({ queryKey: "resource", path: "/Resource/GetAll" });
 
-  // Drawer va form state
   const [open, setOpen] = useState(false);
   const [isCreate, setIsCreate] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any>(null);

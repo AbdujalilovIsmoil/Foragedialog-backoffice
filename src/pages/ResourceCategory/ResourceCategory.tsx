@@ -1,11 +1,11 @@
 import { Button } from "@/components";
 import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
 import type { TableProps, TabsProps } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
-import { useEffect, useState } from "react";
 import { CategorySection, CategoryTopContainer } from "./style";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined } from "@/assets/antd-design-icons";
 import { Col, Row, Form, Tabs, Table, Input, Drawer, Tooltip } from "antd";
 
 type ColumnsType<T extends object = object> = TableProps<T>["columns"];

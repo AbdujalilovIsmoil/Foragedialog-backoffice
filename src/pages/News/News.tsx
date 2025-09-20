@@ -1,4 +1,12 @@
 import { CKEditor, Button } from "@/components";
+import { useState, type ChangeEvent } from "react";
+import { useGet, usePost, usePut, useDelete } from "@/hooks";
+import {
+  UploadOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+} from "@/assets/antd-design-icons";
 import {
   Drawer,
   Select,
@@ -16,14 +24,6 @@ import {
   Descriptions,
   Divider,
 } from "antd";
-import {
-  UploadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-} from "@ant-design/icons";
-import { useState, type ChangeEvent } from "react";
-import { useGet, usePost, usePut, useDelete } from "@/hooks";
 
 interface MultilangText {
   uz: string;

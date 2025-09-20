@@ -5,17 +5,17 @@ import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { CategorySection, CategoryTopContainer } from "./style";
-import { Col, Row, Form, Tabs, Table, Input, Drawer } from "antd";
 import { DeleteOutlined, EditOutlined } from "@/assets/antd-design-icons";
+import { Col, Row, Form, Tabs, Table, Input, Drawer, Tooltip } from "antd";
 
 type ColumnsType<T extends object = object> = TableProps<T>["columns"];
 
 interface DataType {
   id: string | number;
-  tagName: string;
+  categoryName: string;
 }
 
-const Resource: React.FC = () => {
+const Category: React.FC = () => {
   const [isPost, setIsPost] = useState(true);
   const [open, setOpen] = useState<boolean>(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,23 +32,23 @@ const Resource: React.FC = () => {
   }, []);
 
   const { data, isLoading } = useGet({
-    queryKey: "tags",
-    path: "/Tags/GetAll",
+    queryKey: "category",
+    path: "/NewsCategory/GetAll",
   });
 
   const mutationHook = isPost ? usePost : usePut;
 
   const { mutate } = mutationHook({
-    queryKey: ["tags"],
+    queryKey: ["category"],
     onSuccess: async () => onClose(),
-    path: `/Tags/${isPost ? "Create" : "Update"}`,
-    successText: `Success ${isPost ? "Create" : "Update"} tags`,
+    path: `/NewsCategory/${isPost ? "Create" : "Update"}`,
+    successText: `Success ${isPost ? "Create" : "Update"} Category`,
   });
 
   const mutateDelete = useDelete({
-    queryKey: ["tags"],
-    path: "/Tags/Delete",
-    successText: "Delete tags One",
+    queryKey: ["category"],
+    path: "/NewsCategory/Delete",
+    successText: "Delete Category One",
     onError: async (error: unknown) => {
       if (error instanceof Error) {
         toast.error(error.message, { pauseOnHover: false });
@@ -77,11 +77,11 @@ const Resource: React.FC = () => {
 
   const [values, setValues] = useState<
     DynamicValues<{
-      tagName: Record<string, string>;
+      categoryName: Record<string, string>;
     }>
   >({
-    id: 0,
-    tagName: {
+    id: "",
+    categoryName: {
       uz: "",
       ru: "",
       en: "",
@@ -94,8 +94,8 @@ const Resource: React.FC = () => {
 
     setValues({
       ...values,
-      tagName: {
-        ...values.tagName,
+      categoryName: {
+        ...values.categoryName,
         [name]: value,
       },
     });
@@ -103,35 +103,31 @@ const Resource: React.FC = () => {
 
   const openDrawData = (values: {
     id: string | number;
-    tagName: { uz: string; ru: string; en: string; ger: string };
+    categoryName: { uz: string; ru: string; en: string; ger: string };
   }) => {
     showDrawer();
     setIsPost(false);
 
-    setValues({ id: values.id, tagName: { ...values.tagName } });
+    setValues({ id: values.id, categoryName: { ...values.categoryName } });
   };
 
   const columns: ColumnsType<DataType> = [
     {
-      title: "Tags",
-      dataIndex: "tagName",
+      title: "Category",
+      dataIndex: "categoryName",
       render: (value) => {
-        if (!value) {
-          return null;
-        }
-
-        return value[currentLang];
+        return (
+          <Tooltip title={value[currentLang]}>{value[currentLang]}</Tooltip>
+        );
       },
     },
     {
       title: "Edit",
       render: (value) => {
         return (
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => openDrawData(value)}
-          />
+          <Button type="text" size="large" onClick={() => openDrawData(value)}>
+            <EditOutlined style={{ color: "green" }} />
+          </Button>
         );
       },
     },
@@ -140,11 +136,12 @@ const Resource: React.FC = () => {
       render: ({ id }) => {
         return (
           <Button
-            type="default"
-            danger
-            icon={<DeleteOutlined />}
+            type="text"
+            size="large"
             onClick={() => mutateDelete.mutate(id)}
-          />
+          >
+            <DeleteOutlined style={{ color: "red" }} />
+          </Button>
         );
       },
     },
@@ -197,7 +194,7 @@ const Resource: React.FC = () => {
         width={500}
         open={open}
         onClose={onClose}
-        title={`${isPost ? "Create" : "Update"} tags`}
+        title="Create categories"
         styles={{
           body: {
             paddingBottom: 80,
@@ -215,16 +212,18 @@ const Resource: React.FC = () => {
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
-                label="Tags"
+                label="Category"
                 name={currentLang}
-                rules={[{ required: true, message: "Please enter tag" }]}
+                rules={[{ required: true, message: "Please enter category" }]}
               >
                 <Input
                   name={currentLang}
                   onChange={changeLanguage}
-                  placeholder="Please enter tag"
+                  placeholder="Please enter category"
                   defaultValue={
-                    values.tagName[currentLang as keyof typeof values.tagName]
+                    values.categoryName[
+                      currentLang as keyof typeof values.categoryName
+                    ]
                   }
                 />
               </Form.Item>
@@ -240,4 +239,4 @@ const Resource: React.FC = () => {
   );
 };
 
-export default Resource;
+export default Category;

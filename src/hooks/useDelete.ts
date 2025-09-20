@@ -21,10 +21,9 @@ const useDelete = ({
   const queryClient = useQueryClient();
 
   const response = useMutation({
-    mutationFn: (id: string) => {
-      return api.delete(`${path}?id=${id}`).then((response) => {
-        return get(response, "data");
-      });
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`${path}?id=${id}`);
+      return get(response, "data");
     },
     onError: (error) => {
       if (error instanceof Error) {
