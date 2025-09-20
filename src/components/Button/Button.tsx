@@ -5,8 +5,8 @@ interface Ibutton extends ButtonProps {
   children: React.ReactNode;
 }
 
-function Button({ children, ...props }: Partial<Ibutton>) {
+const Button = ({ children, ...props }: Partial<Ibutton>) => {
   return <AntdButton {...props}>{children}</AntdButton>;
-}
+};
 
 export default Button;

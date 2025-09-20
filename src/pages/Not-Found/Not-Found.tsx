@@ -1,4 +1,5 @@
-import { Button, Result } from "antd";
+import { Result } from "antd";
+import { Button } from "@/components";
 import { NotFoundSection } from "./style";
 import { useNavigate } from "react-router-dom";
 

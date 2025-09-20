@@ -1,10 +1,10 @@
+import { Button } from "@/components";
 import { useState, useMemo } from "react";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
 import {
   Row,
   Card,
   Table,
-  Button,
   Drawer,
   Form,
   Input,
@@ -38,7 +38,6 @@ const languages: Language[] = ["uz", "ru", "en", "ger"];
 
 const DEFAULT_IMAGE = "https://via.placeholder.com/160?text=No+Image";
 
-// === IMPORTANT: use NEXT_PUBLIC env var for client-side Next.js ===
 const BASE_API = import.meta.env.VITE_REACT_API_URL || "";
 const getFileUrl = (id?: string) =>
   id ? `${BASE_API}/File/DownloadFile/download/${id}` : "";
