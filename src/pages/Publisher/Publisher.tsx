@@ -1,14 +1,24 @@
-import { get } from "lodash";
+import { useState } from "react";
 import { Button } from "@/components";
 import { toast } from "react-toastify";
 import type { TableProps, UploadFile } from "antd";
-import { useState, type ChangeEvent } from "react";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
-import { Col, Row, Table, Drawer, Form, Input, Upload, Image } from "antd";
+import {
+  Col,
+  Row,
+  Table,
+  Drawer,
+  Form,
+  Input,
+  Upload,
+  Image,
+  Popconfirm,
+} from "antd";
 import {
   EditOutlined,
   UploadOutlined,
   DeleteOutlined,
+  PlusOutlined,
 } from "@/assets/antd-design-icons";
 
 interface Publisher {
@@ -17,128 +27,127 @@ interface Publisher {
   imageId?: string;
 }
 
-const BASE_URL = "http://95.130.227.28:8080";
-const DEFAULT_IMAGE = "https://via.placeholder.com/80?text=No+Image";
+interface FileResponse {
+  fileName: string;
+  contentType: string;
+  path: string;
+  id: string;
+}
+
+const BASE_URL = "https://back.foragedialog.uz";
+const DEFAULT_IMAGE = "https://via.placeholder.com/120?text=No+Image";
 
 const getFileUrl = (id?: string) =>
   id ? `${BASE_URL}/File/DownloadFile/download/${id}` : DEFAULT_IMAGE;
 
 const PublisherComponent: React.FC = () => {
-  const [isPost, setIsPost] = useState(true);
+  const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
-
-  const [values, setValues] = useState<Publisher>({
-    id: 0,
-    name: "",
-    imageId: "",
-  });
-
-  const [uploadedFile, setUploadedFile] = useState<UploadFile[]>([]);
+  const [isPost, setIsPost] = useState(true);
   const [previewImage, setPreviewImage] = useState<string>(DEFAULT_IMAGE);
+  const [uploadedFile, setUploadedFile] = useState<UploadFile[]>([]);
+  const [currentId, setCurrentId] = useState<number | string | null>(null);
 
-  // GET ALL PUBLISHERS
+  // GET ALL
   const { data: rawData = [], isLoading } = useGet({
     queryKey: "publishers",
     path: "/Publisher/GetAll",
   });
-
   const publishersData: Publisher[] = Array.isArray(rawData) ? rawData : [];
 
-  const mutationHook = isPost ? usePost : usePut;
-  const { mutate } = mutationHook({
+  // CREATE
+  const { mutate: createPublisher } = usePost({
     queryKey: ["publishers"],
-    path: `/Publisher/${isPost ? "Create" : "Update"}`,
-    successText: `Publisher ${isPost ? "created" : "updated"} successfully`,
+    path: "/Publisher/Create",
+    successText: "Publisher created successfully",
     onSuccess: () => onClose(),
-    onError: (err: any) => toast.error(err?.title || "Something went wrong"),
   });
 
-  const mutateDelete = useDelete({
+  // UPDATE
+  const { mutate: updatePublisher } = usePut({
+    queryKey: ["publishers"],
+    path: "/Publisher/Update",
+    successText: "Publisher updated successfully",
+    onSuccess: () => onClose(),
+  });
+
+  const deletePublisher = useDelete({
     queryKey: ["publishers"],
     path: "/Publisher/Delete",
-    successText: "Deleted successfully",
-    onError: (err: any) => toast.error(err?.title || "Delete failed"),
+    successText: "Publisher deleted successfully",
   });
 
   const { mutate: uploadFile } = usePost({
     queryKey: ["uploadFile"],
     path: "/File/UploadFile",
-    successText: "File uploaded successfully",
-    onSuccess: (uploaded) => {
-      const id = get(uploaded, "content.id", "");
-      setValues((prev) => ({ ...prev, imageId: id }));
-      setPreviewImage(getFileUrl(id));
+    onSuccess: (uploaded: { content: FileResponse }) => {
+      const id = uploaded.content.id;
+      const fileName = uploaded.content.fileName;
+      const fileUrl = getFileUrl(id);
+
+      setPreviewImage(fileUrl);
       setUploadedFile([
-        {
-          uid: id,
-          name: get(uploaded, "content.fileName", "image"),
-          status: "done",
-          url: getFileUrl(id),
-        },
+        { uid: id, name: fileName, status: "done", url: fileUrl },
       ]);
+      form.setFieldValue("imageId", id);
+      toast.success("File uploaded successfully");
     },
   });
 
   const handleUpload = (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result.startsWith("data:image")) setPreviewImage(result);
-    };
-    reader.readAsDataURL(file);
-
     uploadFile(formData);
-    return false;
+    return false; // prevent auto-upload
   };
 
   const openDrawer = (record?: Publisher) => {
     if (record) {
       setIsPost(false);
-      setValues({ ...record });
-      setPreviewImage(getFileUrl(record.imageId));
-      setUploadedFile([
-        {
-          uid: record.imageId || "1",
-          name: "image",
-          status: "done",
-          url: getFileUrl(record.imageId),
-        },
-      ]);
+      setCurrentId(record.id);
+
+      const imageUrl = getFileUrl(record.imageId);
+      setPreviewImage(imageUrl);
+
+      setUploadedFile(
+        record.imageId
+          ? [
+              {
+                uid: record.imageId,
+                name: "image",
+                status: "done",
+                url: imageUrl,
+              },
+            ]
+          : []
+      );
+
+      form.setFieldsValue(record);
     } else {
       setIsPost(true);
-      setValues({ id: 0, name: "", imageId: "" });
+      setCurrentId(null);
       setPreviewImage(DEFAULT_IMAGE);
       setUploadedFile([]);
+      form.resetFields();
     }
     setOpen(true);
   };
 
   const onClose = () => {
     setOpen(false);
-    setIsPost(true);
-    setUploadedFile([]);
+    form.resetFields();
     setPreviewImage(DEFAULT_IMAGE);
-    setValues({ id: 0, name: "", imageId: "" });
+    setUploadedFile([]);
+    setIsPost(true);
+    setCurrentId(null);
   };
 
-  const handleChangeField = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setValues((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = () => {
-    if (!values.name) {
-      toast.error("Name is required");
-      return;
+  const handleSubmit = (values: Publisher) => {
+    if (isPost) {
+      createPublisher(values);
+    } else {
+      updatePublisher({ ...values, id: currentId });
     }
-    if (!values.imageId) {
-      toast.error("Please upload an image");
-      return;
-    }
-    mutate(values);
   };
 
   const columns: TableProps<Publisher>["columns"] = [
@@ -150,43 +159,52 @@ const PublisherComponent: React.FC = () => {
     {
       title: "Image",
       dataIndex: "imageId",
-      render: (_v, record) => (
+      render: (_, record) => (
         <Image
           width={80}
+          height={80}
           src={getFileUrl(record.imageId)}
           fallback={DEFAULT_IMAGE}
+          style={{
+            objectFit: "cover",
+            borderRadius: 8,
+            border: "1px solid #eee",
+          }}
         />
       ),
     },
     {
-      title: "Edit",
-      render: (_: any, record: Publisher) => (
-        <Button type="text" onClick={() => openDrawer(record)}>
-          <EditOutlined style={{ color: "green", fontSize: 22 }} />
-        </Button>
-      ),
-    },
-    {
-      title: "Delete",
-      render: (_: any, record: Publisher) => (
-        <Button type="text" onClick={() => mutateDelete.mutate(`${record.id}`)}>
-          <DeleteOutlined style={{ color: "red", fontSize: 22 }} />
-        </Button>
+      title: "Actions",
+      render: (_, record) => (
+        <div style={{ display: "flex", gap: 12 }}>
+          <Button type="default" onClick={() => openDrawer(record)}>
+            <EditOutlined style={{ color: "blue" }} />
+            Edit
+          </Button>
+          <Popconfirm
+            title="Are you sure to delete this publisher?"
+            okText="Yes"
+            cancelText="No"
+            onConfirm={() => deletePublisher.mutate(`${record.id}`)}
+          >
+            <Button danger>
+              <DeleteOutlined />
+              Delete
+            </Button>
+          </Popconfirm>
+        </div>
       ),
     },
   ];
 
   return (
     <div>
-      <Row
-        justify="space-between"
-        style={{
-          display: "flex",
-          marginBottom: 16,
-          justifyContent: "flex-end",
-        }}
-      >
-        <Button type="primary" onClick={() => openDrawer()}>
+      <Row justify="end" style={{ marginBottom: 16 }}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => openDrawer()}
+        >
           Create Publisher
         </Button>
       </Row>
@@ -203,27 +221,38 @@ const PublisherComponent: React.FC = () => {
         width={500}
         open={open}
         onClose={onClose}
+        destroyOnClose
         title={isPost ? "Create Publisher" : "Update Publisher"}
       >
-        <Form layout="vertical" onFinish={handleSubmit}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          initialValues={{ name: "", imageId: "" }}
+        >
           <Col span={24}>
-            <Form.Item label="Name" required>
-              <Input
-                name="name"
-                value={values.name}
-                onChange={handleChangeField}
-                placeholder="Enter publisher name"
-              />
+            <Form.Item
+              label="Name"
+              name="name"
+              rules={[
+                { required: true, message: "Please enter publisher name" },
+              ]}
+            >
+              <Input placeholder="Enter publisher name" />
             </Form.Item>
           </Col>
 
           <Col span={24}>
-            <Form.Item label="Upload Image" required>
+            <Form.Item
+              label="Upload Image"
+              name="imageId"
+              rules={[{ required: true, message: "Please upload an image" }]}
+            >
               <Upload
                 beforeUpload={handleUpload}
                 fileList={uploadedFile}
                 onRemove={() => {
-                  setValues((prev) => ({ ...prev, imageId: "" }));
+                  form.setFieldValue("imageId", "");
                   setUploadedFile([]);
                   setPreviewImage(DEFAULT_IMAGE);
                 }}
@@ -231,14 +260,25 @@ const PublisherComponent: React.FC = () => {
               >
                 <Button icon={<UploadOutlined />}>Upload</Button>
               </Upload>
+
               <div style={{ marginTop: 10 }}>
-                <Image width={80} src={previewImage} fallback={DEFAULT_IMAGE} />
+                <Image
+                  width={120}
+                  height={120}
+                  src={previewImage}
+                  fallback={DEFAULT_IMAGE}
+                  style={{
+                    objectFit: "cover",
+                    borderRadius: 8,
+                    border: "1px solid #eee",
+                  }}
+                />
               </div>
             </Form.Item>
           </Col>
 
-          <Button type="primary" htmlType="submit">
-            Submit
+          <Button type="primary" htmlType="submit" block>
+            {isPost ? "Create" : "Update"}
           </Button>
         </Form>
       </Drawer>

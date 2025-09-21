@@ -7,8 +7,8 @@ type typeUsePost = {
   path: string;
   queryKey: string[];
   successText?: string;
+  onSuccess?: (data: any) => void;
   onError?: (data: unknown) => void;
-  onSuccess?: (data: unknown) => void;
 };
 
 const usePost = ({

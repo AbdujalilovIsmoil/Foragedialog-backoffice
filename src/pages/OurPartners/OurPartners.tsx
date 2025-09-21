@@ -1,25 +1,24 @@
+import { useState } from "react";
 import { Button } from "@/components";
 import { toast } from "react-toastify";
 import { useSearchParams } from "react-router-dom";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
 import type { TableProps, TabsProps, UploadFile } from "antd";
-import { useEffect, useState, type ChangeEvent } from "react";
 import {
-  DeleteOutlined,
   EditOutlined,
+  DeleteOutlined,
   UploadOutlined,
 } from "@/assets/antd-design-icons";
 import {
-  Col,
   Row,
   Form,
   Tabs,
   Table,
   Input,
-  Drawer,
-  Tooltip,
-  Upload,
   Image,
+  Drawer,
+  Upload,
+  Tooltip,
 } from "antd";
 
 type ColumnsType<T extends object = object> = TableProps<T>["columns"];
@@ -33,49 +32,18 @@ interface DataType {
 }
 
 const API_URL =
-  import.meta.env.VITE_REACT_API_URL || "http://95.130.227.28:8080";
+  import.meta.env.VITE_REACT_API_URL || "https://back.foragedialog.uz";
 
 const OurPartners: React.FC = () => {
+  const [form] = Form.useForm();
   const [isPost, setIsPost] = useState(true);
   const [open, setOpen] = useState(false);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
+
   const lang = searchParams.get("lang") || "uz";
   const current = searchParams.get("current") || "1";
   const [currentLang, setCurrentLang] = useState(lang);
-
-  const [values, setValues] = useState({
-    id: "",
-    name: { uz: "", ru: "", en: "", ger: "" },
-    about: { uz: "", ru: "", en: "", ger: "" },
-    link: "",
-    picturesId: "",
-  });
-
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
-
-  // Tabs uchun onChange
-  const onChange = (key: string) => {
-    setCurrentLang(key);
-    setSearchParams({ lang: key, current: String(current) });
-  };
-
-  // Drawer va formni yopish
-  const onClose = () => {
-    setOpen(false);
-    setIsPost(true);
-    setFileList([]);
-    setValues({
-      id: "",
-      name: { uz: "", ru: "", en: "", ger: "" },
-      about: { uz: "", ru: "", en: "", ger: "" },
-      link: "",
-      picturesId: "",
-    });
-  };
-
-  useEffect(() => {
-    setSearchParams({ lang: currentLang, current: String(current) });
-  }, []);
 
   const { data, isLoading } = useGet({
     queryKey: "ourPartners",
@@ -83,12 +51,13 @@ const OurPartners: React.FC = () => {
   });
 
   const mutationHook = isPost ? usePost : usePut;
-
   const { mutate } = mutationHook({
     queryKey: ["ourPartners"],
-    onSuccess: onClose,
     path: `/OurPartners/${isPost ? "Create" : "Update"}`,
-    successText: `Success ${isPost ? "Create" : "Update"} Our Partner`,
+    successText: `Success ${isPost ? "Create" : "Update"} Partner`,
+    onSuccess: () => {
+      onClose();
+    },
   });
 
   const mutateDelete = useDelete({
@@ -101,33 +70,66 @@ const OurPartners: React.FC = () => {
     },
   });
 
-  const changeLanguage = (
-    e: ChangeEvent<HTMLInputElement>,
-    field: "name" | "about"
-  ) => {
-    const { value, name } = e.target;
-    setValues((prev) => ({
-      ...prev,
-      [field]: { ...prev[field], [name]: value },
-    }));
+  // Drawer yopish
+  const onClose = () => {
+    setOpen(false);
+    setIsPost(true);
+    setFileList([]);
+    form.resetFields();
   };
 
-  // File upload
+  // Drawer ochish (create)
+  const showDrawer = () => {
+    setOpen(true);
+    setIsPost(true);
+    setFileList([]);
+    form.resetFields();
+  };
+
+  // Drawer ochish (edit)
+  const openDrawData = (row: DataType) => {
+    setOpen(true);
+    setIsPost(false);
+    form.setFieldsValue({
+      id: row.id,
+      name: row.name,
+      about: row.about,
+      link: row.link,
+      picturesId: row.picturesId,
+    });
+
+    if (row.picturesId) {
+      setFileList([
+        {
+          uid: row.picturesId,
+          name: "image",
+          status: "done",
+          url: `${API_URL}/File/DownloadFile/download/${row.picturesId}`,
+        },
+      ]);
+    }
+  };
+
+  // Tilni almashtirish (faqat Table uchun)
+  const onChangeLang = (key: string) => {
+    setCurrentLang(key);
+    setSearchParams({ lang: key, current });
+  };
+
+  // Upload fayl
   const { mutate: uploadFile } = usePost({
     queryKey: ["uploadFile"],
     path: "/File/UploadFile",
     successText: "File uploaded successfully",
     onSuccess: (response: any) => {
       const uploaded = response.content;
-      setValues((prev) => ({ ...prev, picturesId: uploaded.id }));
+      form.setFieldValue("picturesId", uploaded.id);
       setFileList([
         {
           uid: uploaded.id,
           name: uploaded.fileName,
           status: "done",
-          url: `${
-            import.meta.env.VITE_REACT_API_URL
-          }/File/DownloadFile/download/${uploaded.id}`,
+          url: `${API_URL}/File/DownloadFile/download/${uploaded.id}`,
         },
       ]);
     },
@@ -139,41 +141,6 @@ const OurPartners: React.FC = () => {
     formData.append("file", file);
     uploadFile(formData);
     return false;
-  };
-
-  const showDrawer = () => {
-    setOpen(true);
-    setIsPost(true);
-    setValues({
-      id: "",
-      name: { uz: "", ru: "", en: "", ger: "" },
-      about: { uz: "", ru: "", en: "", ger: "" },
-      link: "",
-      picturesId: "",
-    });
-    setFileList([]);
-  };
-
-  const openDrawData = (row: DataType) => {
-    setOpen(true);
-    setIsPost(false);
-    setValues({
-      id: `${row.id}`,
-      name: { ...row.name },
-      about: { ...row.about },
-      link: row.link,
-      picturesId: row.picturesId,
-    });
-    if (row.picturesId) {
-      setFileList([
-        {
-          uid: row.picturesId,
-          name: "image",
-          status: "done",
-          url: `${API_URL}/File/DownloadFile/download/${row.picturesId}`,
-        },
-      ]);
-    }
   };
 
   const columns: ColumnsType<DataType> = [
@@ -207,9 +174,7 @@ const OurPartners: React.FC = () => {
         record.picturesId ? (
           <Image
             width={80}
-            src={`${
-              import.meta.env.VITE_REACT_API_URL
-            }/File/DownloadFile/download/${record.picturesId}`}
+            src={`${API_URL}/File/DownloadFile/download/${record.picturesId}`}
           />
         ) : (
           <span>No Image</span>
@@ -244,10 +209,36 @@ const OurPartners: React.FC = () => {
     { key: "ger", label: "German" },
   ];
 
+  const handleSubmit = (values: any) => {
+    if (!values.picturesId) {
+      toast.error("Please upload a picture");
+      return;
+    }
+
+    // barcha tillarni to‘liq yuborish
+    const fullValues = {
+      ...values,
+      name: {
+        uz: values.name?.uz || "",
+        ru: values.name?.ru || "",
+        en: values.name?.en || "",
+        ger: values.name?.ger || "",
+      },
+      about: {
+        uz: values.about?.uz || "",
+        ru: values.about?.ru || "",
+        en: values.about?.en || "",
+        ger: values.about?.ger || "",
+      },
+    };
+
+    mutate(fullValues);
+  };
+
   return (
     <div>
       <Row justify="space-between" style={{ marginBottom: 16 }}>
-        <Tabs items={items} onChange={onChange} activeKey={currentLang} />
+        <Tabs items={items} onChange={onChangeLang} activeKey={currentLang} />
         <Button type="primary" onClick={showDrawer}>
           Create
         </Button>
@@ -263,64 +254,95 @@ const OurPartners: React.FC = () => {
       />
 
       <Drawer
-        width={500}
+        width={600}
         open={open}
         onClose={onClose}
         title={isPost ? "Create Partner" : "Update Partner"}
         bodyStyle={{ paddingBottom: 80 }}
       >
-        <Tabs items={items} onChange={onChange} activeKey={currentLang} />
-        <Form layout="vertical" onFinish={() => mutate(values)}>
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item label="Name" rules={[{ required: true }]}>
-                <Input
-                  name={currentLang}
-                  value={values.name[currentLang as "uz" | "ru" | "en" | "ger"]}
-                  onChange={(e) => changeLanguage(e, "name")}
-                  placeholder="Enter name"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item label="About" rules={[{ required: true }]}>
-                <Input
-                  name={currentLang}
-                  value={
-                    values.about[currentLang as "uz" | "ru" | "en" | "ger"]
-                  }
-                  onChange={(e) => changeLanguage(e, "about")}
-                  placeholder="Enter about"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item label="Link" rules={[{ required: true }]}>
-                <Input
-                  value={values.link}
-                  onChange={(e) =>
-                    setValues({ ...values, link: e.target.value })
-                  }
-                  placeholder="Enter link"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item label="Upload Picture">
-                <Upload
-                  beforeUpload={handleUpload}
-                  fileList={fileList}
-                  onRemove={() => {
-                    setValues({ ...values, picturesId: "" });
-                    setFileList([]);
-                  }}
-                  listType="picture"
-                >
-                  <Button icon={<UploadOutlined />}>Upload</Button>
-                </Upload>
-              </Form.Item>
-            </Col>
-          </Row>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          initialValues={{
+            id: "",
+            name: { uz: "", ru: "", en: "", ger: "" },
+            about: { uz: "", ru: "", en: "", ger: "" },
+            link: "",
+            picturesId: "",
+          }}
+        >
+          {/* ID ni yashirin field */}
+          <Form.Item name="id" hidden>
+            <Input type="hidden" />
+          </Form.Item>
+
+          {/* Tabs ichida barcha tillar uchun form */}
+          <Tabs
+            items={items.map((lang) => ({
+              key: lang.key,
+              label: lang.label,
+              children: (
+                <>
+                  <Form.Item
+                    label={`Name (${lang.label})`}
+                    name={["name", lang.key]}
+                    rules={[
+                      {
+                        required: lang.key === "uz",
+                        message: "Please enter name",
+                      },
+                    ]}
+                  >
+                    <Input placeholder={`Enter name in ${lang.label}`} />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={`About (${lang.label})`}
+                    name={["about", lang.key]}
+                    rules={[
+                      {
+                        required: lang.key === "uz",
+                        message: "Please enter about",
+                      },
+                    ]}
+                  >
+                    <Input placeholder={`Enter about in ${lang.label}`} />
+                  </Form.Item>
+                </>
+              ),
+            }))}
+          />
+
+          <Form.Item
+            label="Link"
+            name="link"
+            rules={[
+              { required: true, message: "Please enter link" },
+              { type: "url", message: "Please enter valid URL" },
+            ]}
+          >
+            <Input placeholder="Enter link" />
+          </Form.Item>
+
+          <Form.Item
+            label="Upload Picture"
+            name="picturesId"
+            rules={[{ required: true, message: "Please upload a picture" }]}
+          >
+            <Upload
+              beforeUpload={handleUpload}
+              fileList={fileList}
+              onRemove={() => {
+                form.setFieldValue("picturesId", "");
+                setFileList([]);
+              }}
+              listType="picture"
+            >
+              <Button icon={<UploadOutlined />}>Upload</Button>
+            </Upload>
+          </Form.Item>
+
           <Button type="primary" htmlType="submit">
             Submit
           </Button>

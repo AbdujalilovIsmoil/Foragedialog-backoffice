@@ -1,8 +1,8 @@
 import { get } from "lodash";
+import { useState } from "react";
 import { Button } from "@/components";
 import { toast } from "react-toastify";
 import { useSearchParams } from "react-router-dom";
-import { useState, type ChangeEvent } from "react";
 import { useDelete, useGet, usePost, usePut } from "@/hooks";
 import type { TableProps, TabsProps, UploadFile } from "antd";
 import {
@@ -35,34 +35,21 @@ interface TeamMember {
   picturesId?: string;
 }
 
-const BASE_URL = "http://95.130.227.28:8080";
+const BASE_URL = "https://back.foragedialog.uz";
 const DEFAULT_IMAGE = "https://via.placeholder.com/80?text=No+Image";
 const getFileUrl = (id?: string) =>
   id ? `${BASE_URL}/File/DownloadFile/download/${id}` : "";
 
 const OurTeam: React.FC = () => {
+  const [form] = Form.useForm();
   const [isPost, setIsPost] = useState(true);
   const [open, setOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | number | null>(null);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const lang = searchParams.get("lang") || "uz";
   const current = searchParams.get("current") || "1";
   const [currentLang, setCurrentLang] = useState(lang);
-
-  const [values, setValues] = useState<{
-    id?: string | number;
-    name: Record<string, string>;
-    role: Record<string, string>;
-    about: Record<string, string>;
-    experience: Record<string, string>;
-    skills: Array<Record<string, string>>;
-  }>({
-    id: undefined,
-    name: { uz: "", ru: "", en: "", ger: "" },
-    role: { uz: "", ru: "", en: "", ger: "" },
-    about: { uz: "", ru: "", en: "", ger: "" },
-    experience: { uz: "", ru: "", en: "", ger: "" },
-    skills: [{ uz: "", ru: "", en: "", ger: "" }],
-  });
 
   const [uploadedPictureId, setUploadedPictureId] = useState<string>("");
   const [uploadedFileList, setUploadedFileList] = useState<UploadFile[]>([]);
@@ -103,6 +90,7 @@ const OurTeam: React.FC = () => {
       const url = getFileUrl(id);
       setPreviewImage(url || DEFAULT_IMAGE);
       setUploadedFileList([{ uid: id, name, status: "done", url }]);
+      form.setFieldValue("picturesId", id);
     },
   });
 
@@ -121,19 +109,14 @@ const OurTeam: React.FC = () => {
     return false;
   };
 
-  // Drawer open qilish (create/update)
+  // Drawer open qilish
   const openDrawData = (record?: TeamMember) => {
     if (record) {
       setIsPost(false);
-      setValues({
-        id: record.id,
-        name: { ...record.name },
-        role: { ...record.role },
-        about: { ...record.about },
-        experience: { ...record.experience },
-        skills: record.skills.length
-          ? [...record.skills]
-          : [{ uz: "", ru: "", en: "", ger: "" }],
+      setSelectedId(record.id); // <-- id saqlandi
+      form.setFieldsValue({
+        ...record,
+        picturesId: record.picturesId,
       });
       setUploadedPictureId(record.picturesId || "");
       const url = getFileUrl(record.picturesId);
@@ -143,6 +126,11 @@ const OurTeam: React.FC = () => {
       ]);
     } else {
       setIsPost(true);
+      setSelectedId(null); // <-- create bo'lsa id yo'q
+      form.resetFields();
+      setUploadedFileList([]);
+      setPreviewImage(DEFAULT_IMAGE);
+      setUploadedPictureId("");
     }
     setOpen(true);
   };
@@ -150,69 +138,35 @@ const OurTeam: React.FC = () => {
   const onClose = () => {
     setOpen(false);
     setIsPost(true);
+    setSelectedId(null);
     setUploadedFileList([]);
     setPreviewImage(DEFAULT_IMAGE);
     setUploadedPictureId("");
-    setValues({
-      id: undefined,
-      name: { uz: "", ru: "", en: "", ger: "" },
-      role: { uz: "", ru: "", en: "", ger: "" },
-      about: { uz: "", ru: "", en: "", ger: "" },
-      experience: { uz: "", ru: "", en: "", ger: "" },
-      skills: [{ uz: "", ru: "", en: "", ger: "" }],
-    });
+    form.resetFields();
   };
-
-  const changeField = (
-    e: ChangeEvent<HTMLInputElement>,
-    field: keyof typeof values
-  ) => {
-    const { name, value } = e.target;
-    if (field === "skills") {
-      const index = Number(name.split("-")[1]);
-      const langKey = name.split("-")[0] as "uz" | "ru" | "en" | "ger";
-      setValues((prev) => {
-        const newSkills = [...prev.skills];
-        newSkills[index][langKey] = value;
-        return { ...prev, skills: newSkills };
-      });
-    } else {
-      setValues((prev) => ({
-        ...prev,
-        [field]: {
-          ...(prev[field as "name" | "role" | "about" | "experience"] as Record<
-            string,
-            string
-          >),
-          [name]: value,
-        },
-      }));
-    }
-  };
-
-  const addSkill = () =>
-    setValues((prev) => ({
-      ...prev,
-      skills: [...prev.skills, { uz: "", ru: "", en: "", ger: "" }],
-    }));
-
-  const removeSkill = (index: number) =>
-    setValues((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((_, i) => i !== index),
-    }));
 
   const onChangeTab = (key: string) => {
     setCurrentLang(key);
     setSearchParams({ lang: key, current });
   };
 
-  const handleSubmit = () => {
-    if (!uploadedPictureId) {
+  const handleSubmit = (values: any) => {
+    if (!values.picturesId) {
       toast.error("Please upload a picture");
       return;
     }
-    mutate({ ...values, picturesId: uploadedPictureId });
+
+    const payload = {
+      ...values,
+      picturesId: uploadedPictureId,
+    };
+
+    if (!isPost && selectedId) {
+      // faqat update payti id yuboramiz
+      (payload as any).id = selectedId;
+    }
+
+    mutate(payload);
   };
 
   const columns: ColumnsType<TeamMember> = [
@@ -303,56 +257,79 @@ const OurTeam: React.FC = () => {
       >
         <Tabs items={items} onChange={onChangeTab} activeKey={currentLang} />
 
-        <Form layout="vertical" onFinish={handleSubmit}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          initialValues={{
+            name: { uz: "", ru: "", en: "", ger: "" },
+            role: { uz: "", ru: "", en: "", ger: "" },
+            about: { uz: "", ru: "", en: "", ger: "" },
+            experience: { uz: "", ru: "", en: "", ger: "" },
+            skills: [{ uz: "", ru: "", en: "", ger: "" }],
+            picturesId: "",
+          }}
+        >
           {["name", "role", "about", "experience"].map((field) => (
             <Col span={24} key={field}>
               <Form.Item
                 label={field.charAt(0).toUpperCase() + field.slice(1)}
-                required
+                name={[field, currentLang]}
+                rules={[
+                  {
+                    required: true,
+                    message: `Please enter ${field} in ${currentLang}`,
+                  },
+                ]}
               >
-                <Input
-                  name={currentLang}
-                  value={
-                    (
-                      values[field as keyof typeof values] as Record<
-                        string,
-                        string
-                      >
-                    )[currentLang]
-                  }
-                  onChange={(e) => changeField(e, field as keyof typeof values)}
-                  placeholder={`Enter ${field}`}
-                />
+                <Input placeholder={`Enter ${field}`} />
               </Form.Item>
             </Col>
           ))}
 
           <Col span={24}>
-            <Form.Item label="Skills">
-              {values.skills.map((skill, index) => (
-                <div
-                  key={index}
-                  style={{ display: "flex", gap: 8, marginBottom: 8 }}
-                >
-                  <Input
-                    name={`${currentLang}-${index}`}
-                    value={skill[currentLang]}
-                    onChange={(e) => changeField(e, "skills")}
-                    placeholder={`Skill ${index + 1}`}
-                  />
-                  <Button type="default" onClick={() => removeSkill(index)}>
-                    Remove
+            <Form.List name="skills">
+              {(fields, { add, remove }) => (
+                <Form.Item label="Skills" required>
+                  {fields.map((field, index) => (
+                    <div
+                      key={field.key}
+                      style={{ display: "flex", gap: 8, marginBottom: 8 }}
+                    >
+                      <Form.Item
+                        {...field}
+                        name={[field.name, currentLang]}
+                        rules={[
+                          {
+                            required: true,
+                            message: `Please enter skill ${
+                              index + 1
+                            } in ${currentLang}`,
+                          },
+                        ]}
+                        noStyle
+                      >
+                        <Input placeholder={`Skill ${index + 1}`} />
+                      </Form.Item>
+                      <Button type="default" onClick={() => remove(field.name)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="dashed" onClick={() => add()}>
+                    Add Skill
                   </Button>
-                </div>
-              ))}
-              <Button type="dashed" onClick={addSkill}>
-                Add Skill
-              </Button>
-            </Form.Item>
+                </Form.Item>
+              )}
+            </Form.List>
           </Col>
 
           <Col span={24}>
-            <Form.Item label="Upload Picture" required>
+            <Form.Item
+              label="Upload Picture"
+              name="picturesId"
+              rules={[{ required: true, message: "Please upload a picture" }]}
+            >
               <Upload
                 beforeUpload={handleUpload}
                 fileList={uploadedFileList}
@@ -360,6 +337,7 @@ const OurTeam: React.FC = () => {
                   setUploadedPictureId("");
                   setUploadedFileList([]);
                   setPreviewImage(DEFAULT_IMAGE);
+                  form.setFieldValue("picturesId", "");
                 }}
                 listType="picture"
               >

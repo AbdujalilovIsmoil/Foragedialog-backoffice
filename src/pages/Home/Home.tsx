@@ -1,32 +1,48 @@
 import { get } from "lodash";
 import { useState } from "react";
 import CountUp from "react-countup";
-import { Button, Input } from "@/components";
+import { Button } from "@/components";
+import { Link, useLocation } from "react-router-dom";
 import { useGet, useDelete, usePost, usePut } from "@/hooks";
 import {
   Row,
   Col,
-  Card,
-  Table,
   Tag,
-  Drawer,
+  Card,
   Form,
+  Table,
+  Input,
   Select,
+  Drawer,
   Popconfirm,
 } from "antd";
 import {
-  FileTextOutlined,
   UserOutlined,
-  NotificationOutlined,
-  DatabaseOutlined,
+  PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  PlusOutlined,
-} from "@/assets/antd-design-icons";
+  DatabaseOutlined,
+  FileTextOutlined,
+  NotificationOutlined,
+  EyeTwoTone,
+  EyeInvisibleOutlined,
+} from "@ant-design/icons";
 
-const { Option } = Select;
+interface selectedUserInterface {
+  id: number;
+  role: string;
+  email: string;
+  token: string;
+  userName: string;
+  isSigned: boolean;
+  password?: string;
+}
 
 const Home = () => {
+  const [form] = Form.useForm();
+  const location = useLocation();
+  const lang = location.pathname.split("/")[1] || "uz";
+
   const blogs = useGet({ queryKey: "blog", path: "/Blog/GetAll" });
   const users = useGet({ queryKey: "user", path: "/User/GetAll" });
   const news = useGet({ queryKey: "news", path: "/News/GetAll" });
@@ -34,24 +50,26 @@ const Home = () => {
 
   const [open, setOpen] = useState(false);
   const [isCreate, setIsCreate] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<
+    Partial<selectedUserInterface>
+  >({});
 
   const deleteUser = useDelete({
     queryKey: ["user"],
     path: "/User/Delete",
     successText: "User deleted",
-    onError: (err: any) => console.error(err),
+    onError: (err) => console.error(err),
   });
 
   const createUser = usePost({
     queryKey: ["user"],
     path: "/User/Create",
     successText: "User created",
+    onError: (err) => console.error(err),
     onSuccess: () => {
       setOpen(false);
       users.refetch();
     },
-    onError: (err: any) => console.error(err),
   });
 
   const updateUser = usePut({
@@ -68,52 +86,59 @@ const Home = () => {
   const stats = [
     {
       title: "Blogs",
-      value: get(blogs, "data", []).length,
-      icon: <FileTextOutlined />,
       color: "#1677ff",
+      path: "/pages/blog",
+      icon: <FileTextOutlined />,
+      value: get(blogs, "data", []).length,
       bg: "linear-gradient(135deg, #e6f0ff, #f0f5ff)",
     },
     {
+      path: "/",
       title: "Users",
-      value: get(users, "data", []).length,
-      icon: <UserOutlined />,
       color: "#52c41a",
+      icon: <UserOutlined />,
+      value: get(users, "data", []).length,
       bg: "linear-gradient(135deg, #f6ffed, #f0fff5)",
     },
     {
       title: "News",
-      value: get(news, "data", []).length,
-      icon: <NotificationOutlined />,
       color: "#fa8c16",
+      path: "/pages/news",
+      icon: <NotificationOutlined />,
+      value: get(news, "data", []).length,
       bg: "linear-gradient(135deg, #fff7e6, #fff2e8)",
     },
     {
       title: "Resources",
-      value: get(resource, "data", []).length,
-      icon: <DatabaseOutlined />,
       color: "#eb2f96",
+      path: "/pages/resource",
+      icon: <DatabaseOutlined />,
+      value: get(resource, "data", []).length,
       bg: "linear-gradient(135deg, #fff0f6, #fff5f9)",
     },
   ];
 
   const openCreateDrawer = () => {
     setIsCreate(true);
-    setSelectedUser(null);
+    setSelectedUser({});
+    form.resetFields(); // inputlarni tozalash
     setOpen(true);
   };
 
-  const openEditDrawer = (user: any) => {
-    setIsCreate(false);
+  const openEditDrawer = (user: selectedUserInterface) => {
     setSelectedUser(user);
+    setIsCreate(false);
+    form.setFieldsValue(user); // edit bo‘lsa formni to‘ldirish
     setOpen(true);
   };
 
-  const handleSubmit = (values: any) => {
-    if (isCreate) {
-      createUser.mutate(values);
-    } else {
-      updateUser.mutate({ ...selectedUser, ...values });
+  const handleSubmit = (values: selectedUserInterface) => {
+    if (!isCreate && !values.password) {
+      delete values.password; // update-da parol bo‘sh bo‘lsa yubormaymiz
     }
+    isCreate
+      ? createUser.mutate(values)
+      : updateUser.mutate({ ...selectedUser, ...values });
   };
 
   const columns = [
@@ -130,16 +155,16 @@ const Home = () => {
       ),
     },
     {
+      key: "isSigned",
       title: "Signed In",
       dataIndex: "isSigned",
-      key: "isSigned",
       render: (isSigned: boolean) =>
-        isSigned ? <Tag color="green">Yes</Tag> : <Tag color="default">No</Tag>,
+        isSigned ? <Tag color="green">Yes</Tag> : <Tag>No</Tag>,
     },
     {
-      title: "Actions",
       key: "actions",
-      render: (_: any, record: any) => (
+      title: "Actions",
+      render: (_: selectedUserInterface, record: selectedUserInterface) => (
         <div style={{ display: "flex", gap: 8 }}>
           <Button
             type="primary"
@@ -147,10 +172,10 @@ const Home = () => {
             onClick={() => openEditDrawer(record)}
           />
           <Popconfirm
-            title="Are you sure to delete?"
-            onConfirm={() => deleteUser.mutate(`${record.id}`)}
             okText="Yes"
             cancelText="No"
+            title="Are you sure to delete?"
+            onConfirm={() => deleteUser.mutate(`${record.id}`)}
           >
             <Button type="primary" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -161,33 +186,35 @@ const Home = () => {
 
   return (
     <div>
-      {/* Stats */}
       <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
         {stats.map((item, i) => (
           <Col xs={24} sm={12} md={12} lg={6} key={i}>
             <Card
+              hoverable
               bordered={false}
               style={{
                 borderRadius: 16,
-                background: item.bg,
-                boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-                transition: "all 0.3s ease",
                 cursor: "pointer",
+                background: item.bg,
+                transition: "all 0.3s ease",
+                boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
               }}
-              hoverable
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <Link
+                to={`/${lang}${item.path}`}
+                style={{ display: "flex", alignItems: "center", gap: 16 }}
+              >
                 <div
                   style={{
                     width: 55,
                     height: 55,
-                    borderRadius: "50%",
+                    fontSize: 24,
+                    color: "#fff",
                     display: "flex",
+                    borderRadius: "50%",
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: item.color,
-                    color: "#fff",
-                    fontSize: 24,
                     boxShadow: `0 4px 10px ${item.color}40`,
                   }}
                 >
@@ -205,7 +232,7 @@ const Home = () => {
                     <CountUp end={item.value} duration={2} />
                   </div>
                 </div>
-              </div>
+              </Link>
             </Card>
           </Col>
         ))}
@@ -221,7 +248,6 @@ const Home = () => {
         </Button>
       </Row>
 
-      {/* Users Table */}
       <Card
         bordered={false}
         style={{ borderRadius: 16, boxShadow: "0 4px 18px rgba(0,0,0,0.05)" }}
@@ -234,56 +260,58 @@ const Home = () => {
         />
       </Card>
 
-      {/* Drawer for Create/Update */}
       <Drawer
-        title={isCreate ? "Create User" : "Update User"}
+        open={open}
         width={400}
         onClose={() => setOpen(false)}
-        open={open}
+        title={isCreate ? "Create User" : "Update User"}
       >
-        <Form
-          layout="vertical"
-          initialValues={selectedUser || { role: "User" }}
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            label="Username"
             name="userName"
+            label="Full Name"
+            rules={[{ required: true }]}
+          >
+            <Input type="text" />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            label="User Name"
             rules={[{ required: true }]}
           >
             <Input />
           </Form.Item>
-          <Form.Item label="Email" name="email" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
+
           <Form.Item
-            label="Password"
             name="password"
+            label="Password"
             rules={[{ required: isCreate }]}
           >
-            <Input
-              type="password"
+            <Input.Password
               placeholder={isCreate ? "" : "Leave blank to keep current"}
+              iconRender={(visible) =>
+                visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+              }
             />
           </Form.Item>
+
           <Form.Item label="Role" name="role" rules={[{ required: true }]}>
             <Select>
-              <Option value="Admin">Admin</Option>
-              <Option value="User">User</Option>
+              <Select.Option value="Admin">Admin</Select.Option>
+              <Select.Option value="User">User</Select.Option>
             </Select>
           </Form.Item>
+
           {!isCreate && (
-            <Form.Item
-              label="Signed In"
-              name="isSigned"
-              valuePropName="checked"
-            >
+            <Form.Item name="isSigned" label="Signed In">
               <Select>
-                <Option value={true}>Yes</Option>
-                <Option value={false}>No</Option>
+                <Select.Option value={true}>Yes</Select.Option>
+                <Select.Option value={false}>No</Select.Option>
               </Select>
             </Form.Item>
           )}
+
           <Button type="primary" htmlType="submit">
             {isCreate ? "Create" : "Update"}
           </Button>
