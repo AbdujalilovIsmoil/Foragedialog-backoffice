@@ -1,3 +1,3 @@
-import Ckeditor from "./Ckeditor";
+import Ckeditor from "./CKEditor";
 
 export default Ckeditor;
