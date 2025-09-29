@@ -20,6 +20,9 @@ import {
   FileTextOutlined,
   ApartmentOutlined,
   CrownOutlined,
+  FileImageOutlined,
+  LinkOutlined,
+  ExclamationCircleOutlined,
 } from "@/assets/antd-design-icons";
 import {
   Layout as AntdLayout,
@@ -191,9 +194,46 @@ function Layout() {
         },
       ],
     },
+    {
+      id: 6,
+      label: "Images",
+      icon: FileImageOutlined,
+      children: [
+        {
+          id: "6-1",
+          label: "Image Category",
+          path: "/pages/image-category",
+          icon: FileImageOutlined,
+        },
+        {
+          id: "6-2",
+          label: "Image Model",
+          path: "/pages/image-model",
+          icon: ExclamationCircleOutlined,
+        },
+        {
+          id: "6-3",
+          label: "Pictures Model",
+          path: "/pages/pictures-model",
+          icon: ExclamationCircleOutlined,
+        },
+      ],
+    },
+    {
+      id: 7,
+      label: "Reference",
+      icon: LinkOutlined,
+      children: [
+        {
+          id: "7-1",
+          icon: LinkOutlined,
+          label: "Reference Blog",
+          path: "/pages/reference-blog",
+        },
+      ],
+    },
   ];
 
-  // 🔹 Render navItems (children bilan)
   const renderNavItems = navItems.map((el) => {
     if (el.children) {
       return {

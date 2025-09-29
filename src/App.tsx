@@ -17,7 +17,11 @@ import {
   OurTeam,
   Publisher,
   Blog,
+  ImageCategory,
   Recource,
+  ImageModel,
+  ReferenceBlog,
+  PicturesModel
 } from "./pages";
 
 function App() {
@@ -55,6 +59,18 @@ function App() {
             path={`/${correctLang}/pages/resource-category`}
           />
           <Route
+            element={<PicturesModel />}
+            path={`/${correctLang}/pages/pictures-model`}
+          />
+          <Route
+            element={<ImageModel />}
+            path={`/${correctLang}/pages/image-model`}
+          />
+          <Route
+            element={<ReferenceBlog />}
+            path={`/${correctLang}/pages/reference-blog`}
+          />
+          <Route
             element={<Recource />}
             path={`/${correctLang}/pages/resource`}
           />
@@ -74,6 +90,10 @@ function App() {
           <Route
             element={<OurPartners />}
             path={`/${correctLang}/pages/our-partners`}
+          />
+          <Route
+            element={<ImageCategory />}
+            path={`/${correctLang}/pages/image-category`}
           />
           <Route element={<Tags />} path={`/${correctLang}/pages/tags`} />
           <Route

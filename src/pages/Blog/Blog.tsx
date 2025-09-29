@@ -2,6 +2,12 @@ import { CKEditor, Button } from "@/components";
 import { useState, type ChangeEvent } from "react";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
 import {
+  EyeOutlined,
+  EditOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+} from "@/assets/antd-design-icons";
+import {
   Drawer,
   Select,
   Input,
@@ -18,12 +24,6 @@ import {
   Descriptions,
   Divider,
 } from "antd";
-import {
-  EyeOutlined,
-  EditOutlined,
-  UploadOutlined,
-  DeleteOutlined,
-} from "@/assets/antd-design-icons";
 
 interface MultilangText {
   uz: string;
@@ -245,7 +245,7 @@ const News: React.FC = () => {
           }))}
         />
         <Button type="primary" onClick={() => setVisible(true)}>
-          Create Blog
+          Create News
         </Button>
       </div>
       <Table
@@ -259,7 +259,7 @@ const News: React.FC = () => {
       />
       {/* Drawer for create/edit */}
       <Drawer
-        title={values.id ? "Edit BLog" : "Create Blog"}
+        title={values.id ? "Edit News" : "Create News"}
         placement="right"
         width={900}
         onClose={() => setVisible(false)}
@@ -296,8 +296,8 @@ const News: React.FC = () => {
               <Form.Item label="Text">
                 <CKEditor
                   key={currentLang}
-                  ckeDitorData={values.text[currentLang]}
-                  setCkeDitorData={(data) =>
+                  value={values.text[currentLang]}
+                  onChange={(data) =>
                     setValues((prev) => ({
                       ...prev,
                       text: { ...prev.text, [currentLang]: data },

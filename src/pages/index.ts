@@ -15,7 +15,11 @@ const SignIn = lazy(() => import("./Auth/Sign-In"));
 const OurCategory = lazy(() => import("./OurCategory"));
 const OurPartners = lazy(() => import("./OurPartners"));
 const NewsCategory = lazy(() => import("./NewsCategory"));
+const ImageModel = lazy(() => import("./ImageModel"));
+const PicturesModel = lazy(() => import("./PicturesModel"));
+const ImageCategory = lazy(() => import("./ImageCategory"));
 const ResourceCategory = lazy(() => import("./ResourceCategory"));
+const ReferenceBlog = lazy(() => import("./ReferenceBlog"));
 
 export {
   Home,
@@ -30,8 +34,12 @@ export {
   NotFound,
   Settings,
   Publisher,
+  ImageModel,
   OurCategory,
   OurPartners,
   NewsCategory,
+  ImageCategory,
+  PicturesModel,
+  ReferenceBlog,
   ResourceCategory,
 };

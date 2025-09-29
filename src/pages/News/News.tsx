@@ -296,8 +296,8 @@ const News: React.FC = () => {
               <Form.Item label="Text">
                 <CKEditor
                   key={currentLang}
-                  ckeDitorData={values.text[currentLang]}
-                  setCkeDitorData={(data) =>
+                  value={values.text[currentLang]}
+                  onChange={(data) =>
                     setValues((prev) => ({
                       ...prev,
                       text: { ...prev.text, [currentLang]: data },

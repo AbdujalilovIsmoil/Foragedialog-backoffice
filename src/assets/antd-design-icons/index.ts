@@ -26,6 +26,9 @@ import {
   FileWordOutlined,
   FileExcelOutlined,
   FileUnknownOutlined,
+  FileImageOutlined,
+  LinkOutlined,
+  ExclamationCircleOutlined
 } from "@ant-design/icons";
 
 export {
@@ -33,9 +36,12 @@ export {
   LogoutOutlined,
   PlusOutlined,
   EditOutlined,
+  FileImageOutlined,
   BulbOutlined,
+  LinkOutlined,
   ReadOutlined,
   TeamOutlined,
+  ExclamationCircleOutlined,
   TagsOutlined,
   SolutionOutlined,
   ApartmentOutlined,
