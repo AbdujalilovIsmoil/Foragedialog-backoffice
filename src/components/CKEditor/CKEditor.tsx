@@ -4,19 +4,50 @@ import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import ImageResize from "quill-image-resize-module-react";
 
-// Quill modulini ro'yxatga qo'shish
+// 📌 Base embed
+const BlockEmbed = Quill.import("blots/block/embed");
+
+// 📌 Custom Video Blot
+class VideoBlot extends BlockEmbed {
+  static create(url: string) {
+    const node = super.create() as HTMLElement;
+    node.setAttribute("src", url);
+    node.setAttribute("frameborder", "0");
+    node.setAttribute("allowfullscreen", "true");
+    node.classList.add("ql-custom-media");
+    return node;
+  }
+
+  static value(node: HTMLElement) {
+    return node.getAttribute("src") || "";
+  }
+}
+VideoBlot.blotName = "video";
+VideoBlot.tagName = "iframe";
+Quill.register(VideoBlot);
+
+// 📌 Custom Image Blot
+class ImageBlot extends BlockEmbed {
+  static create(url: string) {
+    const node = super.create() as HTMLElement;
+    node.setAttribute("src", url);
+    node.setAttribute("alt", "image");
+    node.classList.add("ql-custom-media");
+    return node;
+  }
+
+  static value(node: HTMLElement) {
+    return node.getAttribute("src") || "";
+  }
+}
+ImageBlot.blotName = "image";
+ImageBlot.tagName = "img";
+Quill.register(ImageBlot);
+
+// 📌 Rasm resize
 Quill.register("modules/imageResize", ImageResize);
 
-// Rasm va video uchun custom CSS class
-const Image = Quill.import("formats/image");
-Image.className = "ql-custom-media";
-Quill.register(Image, true);
-
-const Video = Quill.import("formats/video");
-Video.className = "ql-custom-media";
-Quill.register(Video, true);
-
-// Font size px orqali whitelist
+// 📌 Font size whitelist
 const Size = Quill.import("formats/size");
 Size.whitelist = [
   "10px",
@@ -53,61 +84,6 @@ const QuillEditorComponent: React.FC<QuillEditorProps> = ({
     imageResize: {},
   };
 
-  // Rasm upload handler
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !quillRef.current) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/upload", { method: "POST", body: formData });
-      const data = await res.json();
-
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection(true);
-
-      if (range) {
-        editor.insertText(range.index, "\n", "user");
-        editor.insertEmbed(range.index + 1, "image", data.url, "user");
-        editor.insertText(range.index + 2, "\n", "user");
-        editor.setSelection(range.index + 3, 0);
-        onChange(editor.root.innerHTML);
-      }
-    } catch (err) {
-      console.error("Upload xatolik:", err);
-    }
-  };
-
-  // // Link yoki YouTube video embed
-  // const handleLink = () => {
-  //   if (!quillRef.current) return;
-  //   const editor = quillRef.current.getEditor();
-  //   const range = editor.getSelection(true);
-  //   if (!range) return;
-
-  //   const url = prompt("Linkni kiriting:");
-  //   if (!url) return;
-
-  //   const youtubeMatch = url.match(
-  //     /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/
-  //   );
-
-  //   if (youtubeMatch) {
-  //     const videoId = youtubeMatch[1];
-  //     const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-  //     editor.insertText(range.index, "\n", "user");
-  //     editor.insertEmbed(range.index + 1, "video", embedUrl, "user");
-  //     editor.insertText(range.index + 2, "\n", "user");
-  //     editor.setSelection(range.index + 3, 0);
-  //   } else {
-  //     editor.format("link", url);
-  //   }
-
-  //   onChange(editor.root.innerHTML);
-  // };
-
   const handleChange = (
     _content: string,
     _delta: any,
@@ -115,17 +91,10 @@ const QuillEditorComponent: React.FC<QuillEditorProps> = ({
     editor: any
   ) => {
     onChange(editor.getHTML());
-    console.log(editor.getHTML())
   };
 
   return (
     <div>
-      <input
-        type="file"
-        accept="image/*"
-        style={{ display: "none" }}
-        onChange={handleImageUpload}
-      />
       <ReactQuill
         ref={quillRef}
         theme="snow"
@@ -142,12 +111,8 @@ const QuillEditorComponent: React.FC<QuillEditorProps> = ({
           object-fit: cover;
         }
         .ql-custom-media[src*="youtube.com/embed"] {
-          height: 400px;
-          width: 100% !important;
+          height: 400px !important;
         }
-        .ql-align-left { text-align: left; }
-        .ql-align-center { text-align: center; }
-        .ql-align-right { text-align: right; }
       `}</style>
     </div>
   );
