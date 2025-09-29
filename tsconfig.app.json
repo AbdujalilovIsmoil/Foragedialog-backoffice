@@ -27,5 +27,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "Ckeditor"]
+  "include": ["src", "Ckeditor"],
+  "exclude": ["node_modules"],
+  "types": []
 }
