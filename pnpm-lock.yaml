@@ -105,12 +105,6 @@ importers:
       '@eslint/js':
         specifier: ^9.33.0
         version: 9.36.0
-      '@types/ckeditor__ckeditor5-core':
-        specifier: ^37.0.4
-        version: 37.0.4
-      '@types/ckeditor__ckeditor5-editor-classic':
-        specifier: ^37.0.3
-        version: 37.0.3
       '@types/lodash':
         specifier: ^4.17.20
         version: 4.17.20
@@ -1703,14 +1697,6 @@ packages:
 
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
-
-  '@types/ckeditor__ckeditor5-core@37.0.4':
-    resolution: {integrity: sha512-Ki4fKn6DVy+d73dw+UTfQCHJcV2foI38Zm07oFXdPLe46ML62tuuLumqPZeDxFw9mpvBg2QPFClD1MJkZSywtA==}
-    deprecated: This is a stub types definition. @ckeditor/ckeditor5-core provides its own type definitions, so you do not need this installed.
-
-  '@types/ckeditor__ckeditor5-editor-classic@37.0.3':
-    resolution: {integrity: sha512-EWrwSmnpEJA0LzgHGaO7u8EktF6rBrDCHoFO7pJodBBENcnooVYFfDNf/UfkAma0u+hVM+mFLo6ONNNTk808RQ==}
-    deprecated: This is a stub types definition. @ckeditor/ckeditor5-editor-classic provides its own type definitions, so you do not need this installed.
 
   '@types/color-convert@2.0.4':
     resolution: {integrity: sha512-Ub1MmDdyZ7mX//g25uBAoH/mWGd9swVbt8BseymnaE18SU4po/PjmCrHxqIIRjBo3hV/vh1KGr0eMxUhp+t+dQ==}
@@ -4976,8 +4962,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 46.1.1
       '@ckeditor/ckeditor5-widget': 46.1.1
       ckeditor5: 46.1.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-html-support@44.3.0':
     dependencies:
@@ -5040,8 +5024,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 46.1.1
       ckeditor5: 46.1.1
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-import-word@46.1.1':
     dependencies:
@@ -5054,6 +5036,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 46.1.1
       '@ckeditor/ckeditor5-utils': 46.1.1
       ckeditor5: 46.1.1
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-indent@44.3.0':
     dependencies:
@@ -5095,8 +5079,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 46.1.1
       '@ckeditor/ckeditor5-utils': 46.1.1
       ckeditor5: 46.1.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-line-height@46.1.1':
     dependencies:
@@ -5134,8 +5116,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 46.1.1
       ckeditor5: 46.1.1
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-list-multi-level@46.1.1':
     dependencies:
@@ -5233,8 +5213,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 46.1.1
       '@ckeditor/ckeditor5-widget': 46.1.1
       ckeditor5: 46.1.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-mention@44.3.0':
     dependencies:
@@ -5265,8 +5243,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 46.1.1
       ckeditor5: 46.1.1
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-minimap@44.3.0':
     dependencies:
@@ -6650,18 +6626,6 @@ snapshots:
   '@types/babel__traverse@7.28.0':
     dependencies:
       '@babel/types': 7.28.4
-
-  '@types/ckeditor__ckeditor5-core@37.0.4':
-    dependencies:
-      '@ckeditor/ckeditor5-core': 46.1.1
-    transitivePeerDependencies:
-      - supports-color
-
-  '@types/ckeditor__ckeditor5-editor-classic@37.0.3':
-    dependencies:
-      '@ckeditor/ckeditor5-editor-classic': 46.1.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@types/color-convert@2.0.4':
     dependencies:
