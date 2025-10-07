@@ -230,6 +230,12 @@ function Layout() {
           label: "Reference Blog",
           path: "/pages/reference-blog",
         },
+        {
+          id: "7-2",
+          icon: FileImageOutlined,
+          label: "Reference Images",
+          path: "/pages/reference-image",
+        },
       ],
     },
   ];

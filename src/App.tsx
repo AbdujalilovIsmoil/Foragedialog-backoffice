@@ -21,7 +21,8 @@ import {
   Recource,
   ImageModel,
   ReferenceBlog,
-  PicturesModel
+  PicturesModel,
+  ReferenceImage,
 } from "./pages";
 
 function App() {
@@ -65,6 +66,10 @@ function App() {
           <Route
             element={<ImageModel />}
             path={`/${correctLang}/pages/image-model`}
+          />
+          <Route
+            element={<ReferenceImage />}
+            path={`/${correctLang}/pages/reference-image`}
           />
           <Route
             element={<ReferenceBlog />}

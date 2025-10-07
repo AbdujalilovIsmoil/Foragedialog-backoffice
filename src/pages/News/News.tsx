@@ -356,11 +356,21 @@ const News: React.FC = () => {
               <Form.Item label="Images">
                 <Upload
                   beforeUpload={handleImageUpload}
+                  onRemove={(file) => {
+                    const id = file.uid; // yoki file.name, agar uid bo‘lmasa
+                    setValues((prev) => ({
+                      ...prev,
+                      images: prev.images.filter((imgId) => imgId !== id),
+                    }));
+                    message.success("🗑️ Image removed successfully");
+                    return true; // bu Ant Design uchun majburiy, aksi holda fayl qolib ketadi
+                  }}
                   multiple
                   listType="picture"
                   fileList={values.images.map((id) => ({
                     uid: id,
                     name: id,
+                    status: "done",
                     url: `${
                       import.meta.env.VITE_REACT_API_URL
                     }/File/DownloadFile/download/${id}`,
@@ -370,6 +380,7 @@ const News: React.FC = () => {
                 </Upload>
               </Form.Item>
             </Col>
+
             <Col span={24}>
               <Form.Item label="Reading Time">
                 <Input

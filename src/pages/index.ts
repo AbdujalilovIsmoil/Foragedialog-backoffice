@@ -20,6 +20,7 @@ const PicturesModel = lazy(() => import("./PicturesModel"));
 const ImageCategory = lazy(() => import("./ImageCategory"));
 const ResourceCategory = lazy(() => import("./ResourceCategory"));
 const ReferenceBlog = lazy(() => import("./ReferenceBlog"));
+const ReferenceImage = lazy(() => import("./ReferenceImage"));
 
 export {
   Home,
@@ -41,5 +42,6 @@ export {
   ImageCategory,
   PicturesModel,
   ReferenceBlog,
+  ReferenceImage,
   ResourceCategory,
 };
