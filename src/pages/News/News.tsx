@@ -40,6 +40,8 @@ interface NewsValues {
   categories: number[];
   tags: number[];
   images: string[];
+  categoriesIds: number[] | string[];
+  tagsIds: number[] | string[];
   readingTime: string;
   publishedDate: string;
   publisherId: number;
@@ -51,24 +53,28 @@ interface DataType extends NewsValues {
 
 const languages: (keyof MultilangText)[] = ["uz", "ru", "en", "ger"];
 
+const defaultValues: NewsValues = {
+  subject: { uz: "", ru: "", en: "", ger: "" },
+  title: { uz: "", ru: "", en: "", ger: "" },
+  text: { uz: "", ru: "", en: "", ger: "" },
+  categories: [],
+  tags: [],
+  tagsIds: [],
+  images: [],
+  readingTime: "",
+  categoriesIds: [],
+  publishedDate: new Date().toISOString(),
+  publisherId: 0,
+};
+
 const News: React.FC = () => {
   const [visible, setVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [currentLang, setCurrentLang] = useState<keyof MultilangText>("uz");
-  const [values, setValues] = useState<NewsValues>({
-    subject: { uz: "", ru: "", en: "", ger: "" },
-    title: { uz: "", ru: "", en: "", ger: "" },
-    text: { uz: "", ru: "", en: "", ger: "" },
-    categories: [],
-    tags: [],
-    images: [],
-    readingTime: "",
-    publishedDate: new Date().toISOString(),
-    publisherId: 0,
-  });
-
+  const [values, setValues] = useState<NewsValues>({ ...defaultValues });
   const [viewItem, setViewItem] = useState<NewsValues | null>(null);
 
+  // API hooks
   const { data: newsData, refetch: refetchNews } = useGet({
     path: "/News/GetAll",
     queryKey: "news",
@@ -91,29 +97,34 @@ const News: React.FC = () => {
     queryKey: ["news"],
     onSuccess: () => {
       setVisible(false);
+      setValues({ ...defaultValues });
       refetchNews();
-      message.success("News created successfully");
+      message.success("✅ News created successfully");
     },
   });
+
   const putNews = usePut({
     path: "/News/Update",
     queryKey: ["news"],
     onSuccess: () => {
       setVisible(false);
+      setValues({ ...defaultValues });
       refetchNews();
-      message.success("News updated successfully");
+      message.success("✅ News updated successfully");
     },
   });
+
   const deleteNews = useDelete({
     path: "/News/Delete",
     successText: "",
     queryKey: ["news"],
     onSuccess: () => {
       refetchNews();
-      message.success("News deleted successfully");
+      message.success("🗑️ News deleted successfully");
     },
   });
 
+  // 🧠 Input change
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
     field: keyof NewsValues,
@@ -129,6 +140,7 @@ const News: React.FC = () => {
     }
   };
 
+  // 🧠 Select change
   const handleSelectChange = (
     field: "categories" | "tags" | "publisherId",
     value: any
@@ -136,6 +148,7 @@ const News: React.FC = () => {
     setValues((prev) => ({ ...prev, [field]: value }));
   };
 
+  // 🖼 Upload image
   const handleImageUpload = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -156,43 +169,92 @@ const News: React.FC = () => {
       } else {
         message.error(`${file.name} upload failed`);
       }
-    } catch (err) {
+    } catch {
       message.error(`${file.name} upload failed`);
     }
 
     return false;
   };
 
-  const handleSubmit = () => {
-    values.id ? putNews.mutate(values) : postNews.mutate(values);
+  // 🗑 Remove image
+  const handleImageRemove = (file: any) => {
+    const id = file.uid;
+    setValues((prev) => ({
+      ...prev,
+      images: prev.images.filter((imgId) => imgId !== id),
+    }));
+    return true;
   };
 
-  const openDrawerForEdit = (record: DataType) => {
-    setValues({ ...record });
+  // 💾 Submit
+  const handleSubmit = () => {
+    if (values.id) {
+      putNews.mutate(values, {
+        onSuccess: () => {
+          setValues({ ...defaultValues });
+        },
+      });
+    } else {
+      postNews.mutate(values, {
+        onSuccess: () => {
+          setValues({ ...defaultValues });
+        },
+      });
+    }
+  };
+
+  // ✏️ Edit
+  const openDrawerForEdit = (record: any) => {
+    setValues({
+      id: record.id,
+      categoriesIds: record.categoriesIds,
+      tagsIds: record.tagsIds,
+      subject:
+        typeof record.subject === "object"
+          ? record.subject
+          : { uz: record.subject || "", ru: "", en: "", ger: "" },
+      title:
+        typeof record.title === "object"
+          ? record.title
+          : { uz: record.title || "", ru: "", en: "", ger: "" },
+      text:
+        typeof record.text === "object"
+          ? record.text
+          : { uz: record.text || "", ru: "", en: "", ger: "" },
+      categories: Array.isArray(record.categories)
+        ? record.categories.map((c: any) => c?.id ?? c)
+        : [],
+      tags: Array.isArray(record.tags)
+        ? record.tags.map((t: any) => t?.id ?? t)
+        : [],
+      images: record.images || [],
+      readingTime: record.readingTime || "",
+      publishedDate: record.publishedDate || new Date().toISOString(),
+      publisherId: record.publisherId || 0,
+    });
     setVisible(true);
   };
 
+  // 👁 View
   const openViewModal = (record: DataType) => {
     setViewItem(record);
     setViewModalVisible(true);
   };
 
+  // ➕ Create
+  const openCreateDrawer = () => {
+    setValues({ ...defaultValues });
+    setVisible(true);
+  };
+
+  // Table columns
   const columns = [
-    {
-      title: "ID",
-      dataIndex: "id",
-    },
-    {
-      title: "Subject",
-      dataIndex: "subject",
-      render: (val: MultilangText) => val?.[currentLang] || "",
-    },
+    { title: "ID", dataIndex: "id" },
     {
       title: "Title",
       dataIndex: "title",
       render: (val: MultilangText) => val?.[currentLang] || "",
     },
-
     {
       title: "View",
       render: (_: any, record: DataType) => (
@@ -217,8 +279,8 @@ const News: React.FC = () => {
       title: "Delete",
       render: (_: any, record: DataType) => (
         <Button
-          type="default"
           danger
+          type="default"
           icon={<DeleteOutlined />}
           onClick={() => deleteNews.mutate(`${record.id}`)}
         />
@@ -228,6 +290,7 @@ const News: React.FC = () => {
 
   return (
     <div>
+      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -244,10 +307,12 @@ const News: React.FC = () => {
             label: lang.toUpperCase(),
           }))}
         />
-        <Button type="primary" onClick={() => setVisible(true)}>
+        <Button type="primary" onClick={openCreateDrawer}>
           Create News
         </Button>
       </div>
+
+      {/* Table */}
       <Table
         columns={columns}
         dataSource={(newsData || []).map((item: any) => ({
@@ -257,7 +322,8 @@ const News: React.FC = () => {
         rowKey="key"
         style={{ marginBottom: 16 }}
       />
-      {/* Drawer for create/edit */}
+
+      {/* Drawer (Create/Edit) */}
       <Drawer
         title={values.id ? "Edit News" : "Create News"}
         placement="right"
@@ -277,14 +343,6 @@ const News: React.FC = () => {
         <Form layout="vertical" onFinish={handleSubmit}>
           <Row gutter={16}>
             <Col span={24}>
-              <Form.Item label="Subject">
-                <Input
-                  value={values.subject[currentLang]}
-                  onChange={(e) => handleInputChange(e, "subject", currentLang)}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
               <Form.Item label="Title">
                 <Input
                   value={values.title[currentLang]}
@@ -292,6 +350,7 @@ const News: React.FC = () => {
                 />
               </Form.Item>
             </Col>
+
             <Col span={24}>
               <Form.Item label="Text">
                 <CKEditor
@@ -306,38 +365,51 @@ const News: React.FC = () => {
                 />
               </Form.Item>
             </Col>
+
             <Col span={24}>
               <Form.Item label="Categories">
                 <Select
                   mode="multiple"
-                  value={values.categories}
+                  value={values?.categories}
                   onChange={(v) => handleSelectChange("categories", v)}
                 >
-                  {categoriesData?.map((c: any) => (
-                    <Select.Option key={c.id} value={c.id}>
-                      {c.categoryName?.[currentLang] || ""}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item label="Tags">
-                <Select
-                  mode="multiple"
-                  value={values.tags}
-                  onChange={(v) => handleSelectChange("tags", v)}
-                >
-                  {tagsData?.map((t: any) => {
+                  {categoriesData?.map((c: any) => {
+                    console.log("categories", c);
                     return (
-                      <Select.Option key={t.id} value={t.id}>
-                        {t.tagName?.[currentLang] || ""}
+                      <Select.Option key={c.id} value={c.id}>
+                        {c.categoryName?.[currentLang] || ""}
                       </Select.Option>
                     );
                   })}
                 </Select>
               </Form.Item>
             </Col>
+
+            <Col span={24}>
+              <Form.Item label="Tags">
+                <Select
+                  mode="multiple"
+                  value={values.tags}
+                  onChange={(v) => handleSelectChange("tags", v)}
+                  placeholder="Select tags"
+                  optionFilterProp="children"
+                  style={{ width: "100%" }}
+                >
+                  {tagsData?.map((t: any) => {
+                    const tagLabel =
+                      typeof t.tagName === "object"
+                        ? t.tagName[currentLang] || t.tagName.uz || "No name"
+                        : t.tagName || "No name";
+                    return (
+                      <Select.Option key={t.id} value={t.id}>
+                        {tagLabel}
+                      </Select.Option>
+                    );
+                  })}
+                </Select>
+              </Form.Item>
+            </Col>
+
             <Col span={24}>
               <Form.Item label="Publisher">
                 <Select
@@ -352,25 +424,17 @@ const News: React.FC = () => {
                 </Select>
               </Form.Item>
             </Col>
+
             <Col span={24}>
               <Form.Item label="Images">
                 <Upload
                   beforeUpload={handleImageUpload}
-                  onRemove={(file) => {
-                    const id = file.uid; // yoki file.name, agar uid bo‘lmasa
-                    setValues((prev) => ({
-                      ...prev,
-                      images: prev.images.filter((imgId) => imgId !== id),
-                    }));
-                    message.success("🗑️ Image removed successfully");
-                    return true; // bu Ant Design uchun majburiy, aksi holda fayl qolib ketadi
-                  }}
+                  onRemove={handleImageRemove}
                   multiple
                   listType="picture"
                   fileList={values.images.map((id) => ({
                     uid: id,
                     name: id,
-                    status: "done",
                     url: `${
                       import.meta.env.VITE_REACT_API_URL
                     }/File/DownloadFile/download/${id}`,
@@ -382,34 +446,32 @@ const News: React.FC = () => {
             </Col>
 
             <Col span={24}>
-              <Form.Item label="Reading Time">
-                <Input
-                  value={values.readingTime}
-                  onChange={(e) => handleInputChange(e, "readingTime")}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
               <Form.Item label="Published Date">
                 <Input
                   type="datetime-local"
-                  value={values.publishedDate.slice(0, 16)}
+                  value={
+                    values.publishedDate
+                      ? values.publishedDate.slice(0, 16)
+                      : ""
+                  }
                   onChange={(e) => handleInputChange(e, "publishedDate")}
                 />
               </Form.Item>
             </Col>
+
             <Col span={24}>
               <Button type="primary" htmlType="submit">
-                {values.id ? "Update News" : "Create News"}
+                {values.id ? "Update Blog" : "Create Blog"}
               </Button>
             </Col>
           </Row>
         </Form>
       </Drawer>
-      {/* Modal for viewing news */}
+
+      {/* Modal (View) */}
       <Modal
-        open={viewModalVisible} // ⚠️ Agar AntD v5 bo‘lsa "visible" emas, "open"
-        title={viewItem?.title[currentLang] || "News Details"}
+        open={viewModalVisible}
+        title={viewItem?.title?.[currentLang] || "Blog Details"}
         footer={
           <Button type="primary" onClick={() => setViewModalVisible(false)}>
             Close
@@ -421,88 +483,77 @@ const News: React.FC = () => {
       >
         {viewItem && (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            {/* General Info */}
-            <Descriptions
-              bordered
-              column={2}
-              size="middle"
-              labelStyle={{ fontWeight: 600, width: 180 }}
-            >
-              <Descriptions.Item label="Subject">
-                {viewItem.subject[currentLang]}
-              </Descriptions.Item>
+            <Descriptions bordered column={2} size="middle">
               <Descriptions.Item label="Title">
-                {viewItem.title[currentLang]}
+                {viewItem.title?.[currentLang]}
               </Descriptions.Item>
               <Descriptions.Item label="Publisher" span={2}>
-                {publishersData?.find((p: any) => p.id === viewItem.publisherId)
-                  ?.name || ""}
-              </Descriptions.Item>
-              <Descriptions.Item label="Reading Time">
-                {viewItem.readingTime}
+                {
+                  publishersData?.find(
+                    (p: any) => p.id === viewItem.publisherId
+                  )?.name
+                }
               </Descriptions.Item>
               <Descriptions.Item label="Published Date">
                 {new Date(viewItem.publishedDate).toLocaleString()}
               </Descriptions.Item>
             </Descriptions>
 
-            {/* Text */}
-            <div>
-              <Divider orientation="left">Text</Divider>
-              <div
-                style={{
-                  padding: 16,
-                  border: "1px solid #f0f0f0",
-                  borderRadius: 6,
-                  backgroundColor: "#fafafa",
-                  maxHeight: 300,
-                  overflowY: "auto",
-                }}
-                dangerouslySetInnerHTML={{ __html: viewItem.text[currentLang] }}
-              />
-            </div>
+            <Divider orientation="left">Text</Divider>
+            <div
+              style={{
+                padding: 16,
+                border: "1px solid #f0f0f0",
+                borderRadius: 6,
+                backgroundColor: "#fafafa",
+                maxHeight: 300,
+                overflowY: "auto",
+              }}
+              dangerouslySetInnerHTML={{
+                __html: viewItem.text?.[currentLang] || "",
+              }}
+            />
 
-            {/* Categories & Tags */}
-            <div>
-              <Divider orientation="left">Categories & Tags</Divider>
-              <div style={{ marginBottom: 12 }}>
-                {(viewItem.categories || []).map((catId) => {
-                  const cat = categoriesData?.find((c: any) => c.id === catId);
-                  return cat ? (
+            <Divider orientation="left">Categories & Tags</Divider>
+            <div style={{ marginBottom: 12 }}>
+              {(viewItem.categories || []).map((catId) => {
+                const cat = categoriesData?.find((c: any) => c.id === catId);
+                return (
+                  cat && (
                     <Tag color="blue" key={catId}>
-                      {cat.categoryName[currentLang]}
+                      {cat.categoryName?.[currentLang]}
                     </Tag>
-                  ) : null;
-                })}
-              </div>
-              <div>
-                {(viewItem.tags || []).map((tagId) => {
-                  const tag = tagsData?.find((t: any) => t.id === tagId);
-                  return tag ? (
+                  )
+                );
+              })}
+            </div>
+            <div>
+              {(viewItem.tags || []).map((tagId) => {
+                const tag = tagsData?.find((t: any) => t.id === tagId);
+
+                return (
+                  tag && (
                     <Tag color="green" key={tagId}>
-                      {tag.name}
+                      {tag.tagName?.[currentLang] || tag.name}
                     </Tag>
-                  ) : null;
-                })}
-              </div>
+                  )
+                );
+              })}
             </div>
 
-            {/* Images */}
-            <div>
-              <Divider orientation="left">Images</Divider>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                {viewItem.images.map((id) => (
-                  <Image
-                    key={id}
-                    width={140}
-                    height={100}
-                    style={{ objectFit: "cover", borderRadius: 6 }}
-                    src={`${
-                      import.meta.env.VITE_REACT_API_URL
-                    }/File/DownloadFile/download/${id}`}
-                  />
-                ))}
-              </div>
+            <Divider orientation="left">Images</Divider>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {viewItem.images?.map((id) => (
+                <Image
+                  key={id}
+                  width={140}
+                  height={100}
+                  style={{ objectFit: "cover", borderRadius: 6 }}
+                  src={`${
+                    import.meta.env.VITE_REACT_API_URL
+                  }/File/DownloadFile/download/${id}`}
+                />
+              ))}
             </div>
           </div>
         )}

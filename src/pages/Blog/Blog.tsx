@@ -43,6 +43,8 @@ interface NewsValues {
   readingTime: string;
   publishedDate: string;
   publisherId: number;
+  categoriesIds: number[] | string[];
+  tagsIds: number[] | string[];
 }
 
 interface DataType extends NewsValues {
@@ -57,6 +59,8 @@ const defaultValues: NewsValues = {
   text: { uz: "", ru: "", en: "", ger: "" },
   categories: [],
   tags: [],
+  categoriesIds: [],
+  tagsIds: [],
   images: [],
   readingTime: "",
   publishedDate: new Date().toISOString(),
@@ -205,6 +209,8 @@ const News: React.FC = () => {
 
     setValues({
       id: record.id,
+      tagsIds: record.tagsIds,
+      categoriesIds: record.categoriesIds,
       subject:
         typeof record.subject === "object"
           ? record.subject
@@ -369,11 +375,14 @@ const News: React.FC = () => {
                   value={values?.categories}
                   onChange={(v) => handleSelectChange("categories", v)}
                 >
-                  {categoriesData?.map((c: any) => (
-                    <Select.Option key={c.id} value={c.id}>
-                      {c.categories?.[currentLang] || ""}
-                    </Select.Option>
-                  ))}
+                  {categoriesData?.map((c: any) => {
+                    console.log("categories", c);
+                    return (
+                      <Select.Option key={c.id} value={c.id}>
+                        {c.categoryName?.[currentLang] || ""}
+                      </Select.Option>
+                    );
+                  })}
                 </Select>
               </Form.Item>
             </Col>
@@ -454,7 +463,7 @@ const News: React.FC = () => {
 
             <Col span={24}>
               <Button type="primary" htmlType="submit">
-                {values.id ? "Update News" : "Create News"}
+                {values.id ? "Update Blog" : "Create Blog"}
               </Button>
             </Col>
           </Row>
@@ -464,7 +473,7 @@ const News: React.FC = () => {
       {/* Modal (View) */}
       <Modal
         open={viewModalVisible}
-        title={viewItem?.title?.[currentLang] || "News Details"}
+        title={viewItem?.title?.[currentLang] || "Blog Details"}
         footer={
           <Button type="primary" onClick={() => setViewModalVisible(false)}>
             Close
