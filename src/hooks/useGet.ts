@@ -12,13 +12,7 @@ const useGet = ({ path = "/", queryKey }: typeUseGet) => {
     queryKey: [queryKey],
     staleTime: 1000 * 60 * 6, // 6 daqiqa
     queryFn: () =>
-      api
-        .get(path, {
-          headers: {
-            "Accept-Encoding": "gzip", // Shu yerda gzip header qo'shildi
-          },
-        })
-        .then((response) => get(response, "data.content")),
+      api.get(path).then((response) => get(response, "data.content")),
   });
 
   return data;
