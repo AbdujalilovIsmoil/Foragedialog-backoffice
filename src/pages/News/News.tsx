@@ -1,5 +1,5 @@
 import { CKEditor, Button } from "@/components";
-import { useState, type ChangeEvent } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
 import {
   EyeOutlined,
@@ -40,11 +40,11 @@ interface NewsValues {
   categories: number[];
   tags: number[];
   images: string[];
-  categoriesIds: number[] | string[];
-  tagsIds: number[] | string[];
   readingTime: string;
   publishedDate: string;
   publisherId: number;
+  categoriesIds: number[] | string[];
+  tagsIds: number[] | string[];
 }
 
 interface DataType extends NewsValues {
@@ -59,10 +59,10 @@ const defaultValues: NewsValues = {
   text: { uz: "", ru: "", en: "", ger: "" },
   categories: [],
   tags: [],
+  categoriesIds: [],
   tagsIds: [],
   images: [],
   readingTime: "",
-  categoriesIds: [],
   publishedDate: new Date().toISOString(),
   publisherId: 0,
 };
@@ -73,6 +73,13 @@ const News: React.FC = () => {
   const [currentLang, setCurrentLang] = useState<keyof MultilangText>("uz");
   const [values, setValues] = useState<NewsValues>({ ...defaultValues });
   const [viewItem, setViewItem] = useState<NewsValues | null>(null);
+
+  const [form] = Form.useForm();
+
+  // ✅ form va state sinxron ishlashi uchun
+  useEffect(() => {
+    form.setFieldsValue(values);
+  }, [values, form]);
 
   // API hooks
   const { data: newsData, refetch: refetchNews } = useGet({
@@ -97,6 +104,7 @@ const News: React.FC = () => {
     queryKey: ["news"],
     onSuccess: () => {
       setVisible(false);
+      form.resetFields();
       setValues({ ...defaultValues });
       refetchNews();
       message.success("✅ News created successfully");
@@ -108,6 +116,7 @@ const News: React.FC = () => {
     queryKey: ["news"],
     onSuccess: () => {
       setVisible(false);
+      form.resetFields();
       setValues({ ...defaultValues });
       refetchNews();
       message.success("✅ News updated successfully");
@@ -130,13 +139,18 @@ const News: React.FC = () => {
     field: keyof NewsValues,
     lang?: keyof MultilangText
   ) => {
+    const value = e.target.value;
     if (lang) {
       setValues((prev) => ({
         ...prev,
-        [field]: { ...(prev[field] as MultilangText), [lang]: e.target.value },
+        [field]: { ...(prev[field] as MultilangText), [lang]: value },
       }));
+      form.setFieldsValue({
+        [field]: { ...(values[field] as MultilangText), [lang]: value },
+      });
     } else {
-      setValues((prev) => ({ ...prev, [field]: e.target.value }));
+      setValues((prev) => ({ ...prev, [field]: value }));
+      form.setFieldsValue({ [field]: value });
     }
   };
 
@@ -146,6 +160,7 @@ const News: React.FC = () => {
     value: any
   ) => {
     setValues((prev) => ({ ...prev, [field]: value }));
+    form.setFieldsValue({ [field]: value });
   };
 
   // 🖼 Upload image
@@ -161,10 +176,9 @@ const News: React.FC = () => {
       const data = await response.json();
       const contentId = data?.content?.id;
       if (contentId) {
-        setValues((prev) => ({
-          ...prev,
-          images: [...prev.images, contentId],
-        }));
+        const updatedImages = [...values.images, contentId];
+        setValues((prev) => ({ ...prev, images: updatedImages }));
+        form.setFieldsValue({ images: updatedImages });
         message.success(`${file.name} uploaded successfully`);
       } else {
         message.error(`${file.name} upload failed`);
@@ -179,36 +193,27 @@ const News: React.FC = () => {
   // 🗑 Remove image
   const handleImageRemove = (file: any) => {
     const id = file.uid;
-    setValues((prev) => ({
-      ...prev,
-      images: prev.images.filter((imgId) => imgId !== id),
-    }));
+    const updated = values.images.filter((imgId) => imgId !== id);
+    setValues((prev) => ({ ...prev, images: updated }));
+    form.setFieldsValue({ images: updated });
     return true;
   };
 
   // 💾 Submit
   const handleSubmit = () => {
     if (values.id) {
-      putNews.mutate(values, {
-        onSuccess: () => {
-          setValues({ ...defaultValues });
-        },
-      });
+      putNews.mutate(values);
     } else {
-      postNews.mutate(values, {
-        onSuccess: () => {
-          setValues({ ...defaultValues });
-        },
-      });
+      postNews.mutate(values);
     }
   };
 
   // ✏️ Edit
   const openDrawerForEdit = (record: any) => {
-    setValues({
+    const updatedValues: NewsValues = {
       id: record.id,
-      categoriesIds: record.categoriesIds,
       tagsIds: record.tagsIds,
+      categoriesIds: record.categoriesIds,
       subject:
         typeof record.subject === "object"
           ? record.subject
@@ -231,7 +236,9 @@ const News: React.FC = () => {
       readingTime: record.readingTime || "",
       publishedDate: record.publishedDate || new Date().toISOString(),
       publisherId: record.publisherId || 0,
-    });
+    };
+
+    setValues(updatedValues);
     setVisible(true);
   };
 
@@ -243,6 +250,7 @@ const News: React.FC = () => {
 
   // ➕ Create
   const openCreateDrawer = () => {
+    form.resetFields();
     setValues({ ...defaultValues });
     setVisible(true);
   };
@@ -340,19 +348,28 @@ const News: React.FC = () => {
             label: lang.toUpperCase(),
           }))}
         />
-        <Form layout="vertical" onFinish={handleSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Row gutter={16}>
+            {/* Title */}
             <Col span={24}>
-              <Form.Item label="Title">
+              <Form.Item
+                label="Title"
+                name={["title", currentLang]}
+                rules={[{ required: true, message: "Please enter the title" }]}
+              >
                 <Input
-                  value={values.title[currentLang]}
                   onChange={(e) => handleInputChange(e, "title", currentLang)}
                 />
               </Form.Item>
             </Col>
 
+            {/* Text */}
             <Col span={24}>
-              <Form.Item label="Text">
+              <Form.Item
+                label="Text"
+                name={["text", currentLang]}
+                rules={[{ required: true, message: "Please enter the text" }]}
+              >
                 <CKEditor
                   key={currentLang}
                   value={values.text[currentLang]}
@@ -366,34 +383,40 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
 
+            {/* Categories */}
             <Col span={24}>
-              <Form.Item label="Categories">
+              <Form.Item
+                label="Categories"
+                name="categories"
+                rules={[
+                  { required: true, message: "Please enter the categories" },
+                ]}
+              >
                 <Select
                   mode="multiple"
-                  value={values?.categories}
+                  value={values.categories}
                   onChange={(v) => handleSelectChange("categories", v)}
                 >
-                  {categoriesData?.map((c: any) => {
-                    console.log("categories", c);
-                    return (
-                      <Select.Option key={c.id} value={c.id}>
-                        {c.categoryName?.[currentLang] || ""}
-                      </Select.Option>
-                    );
-                  })}
+                  {categoriesData?.map((c: any) => (
+                    <Select.Option key={c.id} value={c.id}>
+                      {c.categoryName?.[currentLang] || ""}
+                    </Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
 
+            {/* Tags */}
             <Col span={24}>
-              <Form.Item label="Tags">
+              <Form.Item
+                label="Tags"
+                name="tags"
+                rules={[{ required: true, message: "Please enter the tags" }]}
+              >
                 <Select
                   mode="multiple"
                   value={values.tags}
                   onChange={(v) => handleSelectChange("tags", v)}
-                  placeholder="Select tags"
-                  optionFilterProp="children"
-                  style={{ width: "100%" }}
                 >
                   {tagsData?.map((t: any) => {
                     const tagLabel =
@@ -410,8 +433,15 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
 
+            {/* Publisher */}
             <Col span={24}>
-              <Form.Item label="Publisher">
+              <Form.Item
+                label="Publisher"
+                name="publisherId"
+                rules={[
+                  { required: true, message: "Please enter the publisher" },
+                ]}
+              >
                 <Select
                   value={values.publisherId}
                   onChange={(v) => handleSelectChange("publisherId", v)}
@@ -425,8 +455,13 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
 
+            {/* Images */}
             <Col span={24}>
-              <Form.Item label="Images">
+              <Form.Item
+                label="Images"
+                name="images"
+                rules={[{ required: true, message: "Please upload an image" }]}
+              >
                 <Upload
                   beforeUpload={handleImageUpload}
                   onRemove={handleImageRemove}
@@ -445,8 +480,13 @@ const News: React.FC = () => {
               </Form.Item>
             </Col>
 
+            {/* Date */}
             <Col span={24}>
-              <Form.Item label="Published Date">
+              <Form.Item
+                label="Published Date"
+                name="publishedDate"
+                rules={[{ required: true, message: "Please enter the date" }]}
+              >
                 <Input
                   type="datetime-local"
                   value={
@@ -468,7 +508,7 @@ const News: React.FC = () => {
         </Form>
       </Drawer>
 
-      {/* Modal (View) */}
+      {/* View Modal */}
       <Modal
         open={viewModalVisible}
         title={viewItem?.title?.[currentLang] || "Blog Details"}
@@ -530,7 +570,6 @@ const News: React.FC = () => {
             <div>
               {(viewItem.tags || []).map((tagId) => {
                 const tag = tagsData?.find((t: any) => t.id === tagId);
-
                 return (
                   tag && (
                     <Tag color="green" key={tagId}>
