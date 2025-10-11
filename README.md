@@ -61,7 +61,7 @@ git clone https://github.com/AbdujalilovIsmoil/Foragedialog-frontoffice.git
 cd Foragedialog-frontoffice
 
 # 3. Install dependencies
-npm install
+pnpm install
 
 # 4. Start the development server
-npm run dev
+pnpm run dev
