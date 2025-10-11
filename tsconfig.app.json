@@ -36,6 +36,6 @@
       "ckeditor__ckeditor5-editor-classic"
     ]
   },
-  "include": ["src"],
+  "include": ["src", "src/global.d.ts"],
   "exclude": ["node_modules"]
 }
