@@ -24,7 +24,7 @@ interface ImageType {
 interface PicturesType {
   id: number;
   categoryId: number;
-  categoryName: {
+  CategoryName: {
     uz: string;
     ru: string;
     en: string;
@@ -99,9 +99,19 @@ const PicturesModel: React.FC = () => {
 
   // Submit
   const handleSubmit = (values: any) => {
+    const selectedCategory = categories?.find(
+      (cat: CategoryType) => cat.id === values.categoryId
+    );
+
+    if (!selectedCategory) {
+      toast.error("Category not found");
+      return;
+    }
+
     const payload = {
       id: isPost ? 0 : selectedRow?.id,
       categoryId: values.categoryId,
+      categoryName: selectedCategory.category,
       imagesIds: values.imagesIds || [],
     };
     mutate(payload);
@@ -112,7 +122,7 @@ const PicturesModel: React.FC = () => {
     {
       title: "Category",
       dataIndex: "categoryName",
-      render: (value: PicturesType["categoryName"]) => (
+      render: (value: PicturesType["CategoryName"]) => (
         <Tooltip title={value.uz}>{value.uz}</Tooltip>
       ),
     },
