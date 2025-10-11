@@ -28,13 +28,7 @@
     "noUncheckedSideEffectImports": true,
 
     /* Types */
-    "types": [
-      "node",
-      "react",
-      "react-dom",
-      "ckeditor__ckeditor5-core",
-      "ckeditor__ckeditor5-editor-classic"
-    ]
+    "types": []
   },
   "include": ["src", "src/global.d.ts"],
   "exclude": ["node_modules"]
