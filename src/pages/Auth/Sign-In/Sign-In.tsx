@@ -32,7 +32,7 @@ const SignIn = () => {
     path: "/Auth/Login",
     onError: (error: unknown) => {
       if (error instanceof Error) {
-        toastAlert({ typeInfo: "error", content: error.message });
+        toastAlert({ typeInfo: "error", content: "Ro'yxatdan o'ting" });
       }
     },
     onSuccess: (data: unknown) => {

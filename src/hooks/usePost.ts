@@ -26,6 +26,7 @@ const usePost = ({
       return get(response, "data");
     },
     onError: (error) => {
+      console.error("error", error);
       onError(error);
       if (error instanceof Error) {
         toast.error(error.message, { pauseOnHover: false });
