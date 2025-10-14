@@ -2,8 +2,19 @@ import { useState } from "react";
 import { Button } from "@/components";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
 import { toast } from "react-toastify";
-import { Table, Drawer, Form, Select, Row, Col, Tooltip, Image } from "antd";
+import {
+  Table,
+  Drawer,
+  Form,
+  Select,
+  Row,
+  Col,
+  Tooltip,
+  Image,
+  Space,
+} from "antd";
 import { DeleteOutlined, EditOutlined } from "@/assets/antd-design-icons";
+import { api } from "@/services";
 
 interface CategoryType {
   id: number;
@@ -24,7 +35,7 @@ interface ImageType {
 interface PicturesType {
   id: number;
   categoryId: number;
-  CategoryName: {
+  categoryName: {
     uz: string;
     ru: string;
     en: string;
@@ -38,37 +49,43 @@ const PicturesModel: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [isPost, setIsPost] = useState(true);
   const [selectedRow, setSelectedRow] = useState<PicturesType | null>(null);
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
 
   const [form] = Form.useForm();
 
-  // Categories
   const { data: categories } = useGet({
     queryKey: "image-categories",
     path: "/ImageCategory/GetAll",
   });
 
-  // Images (array qaytadi)
   const { data: images } = useGet({
     queryKey: "images",
     path: "/ImageModel/GetAll",
   });
 
-  // PicturesModel (GET ALL)
-  const { data, isLoading } = useGet({
+  const { data, isLoading, refetch } = useGet({
     queryKey: "pictures-model",
     path: "/PicturesModel/GetAll",
   });
 
-  // POST or PUT
-  const mutationHook = isPost ? usePost : usePut;
-  const { mutate } = mutationHook({
+  const createMutation = usePost({
     queryKey: ["pictures-model"],
-    path: `/PicturesModel/${isPost ? "Create" : "UpdateModel"}`,
-    successText: `Success ${isPost ? "Create" : "Update"} Picture`,
+    path: "/PicturesModel/Create",
+    successText: "Picture Created Successfully",
     onSuccess: async () => onClose(),
   });
 
-  // DELETE
+  const updateAllMutation = usePut({
+    queryKey: ["pictures-model"],
+    path: "/PicturesModel/UpdateModel",
+    successText: "All Picture Data Updated Successfully",
+    onSuccess: async () => {
+      onClose();
+      refetch();
+    },
+  });
+
   const mutateDelete = useDelete({
     queryKey: ["pictures-model"],
     path: "/PicturesModel/Delete",
@@ -79,6 +96,7 @@ const PicturesModel: React.FC = () => {
   });
 
   const showDrawer = () => setOpen(true);
+
   const onClose = () => {
     setOpen(false);
     setIsPost(true);
@@ -86,7 +104,6 @@ const PicturesModel: React.FC = () => {
     form.resetFields();
   };
 
-  // Edit
   const openEdit = (row: PicturesType) => {
     setIsPost(false);
     setSelectedRow(row);
@@ -97,32 +114,87 @@ const PicturesModel: React.FC = () => {
     setOpen(true);
   };
 
-  // Submit
-  const handleSubmit = (values: any) => {
+  const handleCreate = (values: any) => {
     const selectedCategory = categories?.find(
       (cat: CategoryType) => cat.id === values.categoryId
     );
-
     if (!selectedCategory) {
       toast.error("Category not found");
       return;
     }
-
     const payload = {
-      id: isPost ? 0 : selectedRow?.id,
+      id: 0,
       categoryId: values.categoryId,
       categoryName: selectedCategory.category,
       imagesIds: values.imagesIds || [],
     };
-    mutate(payload);
+    createMutation.mutate(payload);
   };
 
-  // Table columns
+  const handleUpdateImages = async () => {
+    if (!selectedRow) return;
+    try {
+      setLoadingImages(true);
+
+      const imagesIds = form.getFieldValue("imagesIds") || [];
+
+      // Backend kutayotgan format: [1, 2, 3, 4]
+      await api.put(
+        `/PicturesModel/UpdateImages?picturesModelId=${selectedRow.id}`,
+        imagesIds,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      toast.success("Images updated successfully");
+      refetch();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error updating images");
+    } finally {
+      setLoadingImages(false);
+    }
+  };
+
+  const handleUpdateAll = async () => {
+    if (!selectedRow) return;
+    try {
+      setLoadingAll(true);
+      const values = await form.validateFields();
+      const selectedCategory = categories?.find(
+        (c: CategoryType) => c.id === values.categoryId
+      );
+
+      const payload = {
+        id: selectedRow.id,
+        categoryId: values.categoryId,
+        categoryName: selectedCategory
+          ? selectedCategory.category
+          : selectedRow.categoryName,
+        imagesIds: values.imagesIds || [],
+      };
+
+      updateAllMutation.mutate(payload);
+      toast.success("All data updated successfully");
+      setLoadingAll(false);
+      refetch();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error updating all data");
+      setLoadingAll(false);
+    }
+  };
+
   const columns = [
     {
       title: "Category",
       dataIndex: "categoryName",
-      render: (value: PicturesType["CategoryName"]) => (
+      render: (value: PicturesType["categoryName"]) => (
         <Tooltip title={value.uz}>{value.uz}</Tooltip>
       ),
     },
@@ -219,14 +291,17 @@ const PicturesModel: React.FC = () => {
         }}
       />
 
-      {/* Drawer (Create / Update) */}
       <Drawer
-        title={`${isPost ? "Create" : "Update"} Picture`}
+        title={`${isPost ? "Create" : "Edit"} Picture`}
         open={open}
         width={500}
         onClose={onClose}
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={isPost ? handleCreate : handleUpdateAll}
+        >
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
@@ -265,9 +340,28 @@ const PicturesModel: React.FC = () => {
             </Col>
           </Row>
 
-          <Button type="primary" htmlType="submit">
-            Submit
-          </Button>
+          {isPost ? (
+            <Button type="primary" htmlType="submit">
+              Create
+            </Button>
+          ) : (
+            <Space style={{ width: "100%", justifyContent: "space-between" }}>
+              <Button
+                type="default"
+                onClick={handleUpdateImages}
+                loading={loadingImages}
+              >
+                Update Images
+              </Button>
+              <Button
+                type="primary"
+                onClick={handleUpdateAll}
+                loading={loadingAll}
+              >
+                Update All
+              </Button>
+            </Space>
+          )}
         </Form>
       </Drawer>
     </>
