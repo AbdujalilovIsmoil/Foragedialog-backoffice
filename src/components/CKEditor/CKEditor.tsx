@@ -6,7 +6,7 @@ import ImageResize from "quill-image-resize-module-react";
 // ✅ Image resize moduli
 Quill.register("modules/imageResize", ImageResize);
 
-// ✅ Custom image blot
+// ✅ Custom image blot (rasm uchun)
 const BlockEmbed = Quill.import("blots/block/embed");
 class ImageBlot extends BlockEmbed {
   static create(url: string) {
@@ -92,7 +92,46 @@ const QuillEditorComponent: React.FC<QuillEditorProps> = ({
     };
   }, []);
 
-  // 🧰 Quill modullar (useMemo bilan barqaror qilish)
+  // 🎥 YouTube video qo'shish handler (barcha formatlar uchun)
+  const videoHandler = useCallback(() => {
+    const url = prompt("YouTube video URL kiriting:");
+    if (!url) return;
+
+    let videoId = "";
+    const patterns = [
+      /youtube\.com\/watch\?v=([^&]+)/, // watch?v=
+      /youtu\.be\/([^?&]+)/, // youtu.be/
+      /youtube\.com\/embed\/([^?&]+)/, // embed/
+      /youtube\.com\/shorts\/([^?&]+)/, // shorts/
+      /youtube\.com\/live\/([^?&]+)/, // live/
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        videoId = match[1];
+        break;
+      }
+    }
+
+    if (!videoId) {
+      alert("❌ YouTube link noto‘g‘ri formatda!");
+      return;
+    }
+
+    const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    const quill = quillRef.current?.getEditor();
+
+    if (quill) {
+      const range = quill.getSelection(true);
+      if (range) {
+        quill.insertEmbed(range.index, "video", embedUrl);
+        quill.setSelection({ index: range.index + 1, length: 0 }); // ✅ to‘g‘ri turdagi argument
+      }
+    }
+  }, []);
+
+  // 🧰 Quill modullar (image + video + resize)
   const modules = React.useMemo(
     () => ({
       toolbar: {
@@ -103,11 +142,11 @@ const QuillEditorComponent: React.FC<QuillEditorProps> = ({
           [{ align: [] }],
           ["link", "image", "video"],
         ],
-        handlers: { image: imageHandler },
+        handlers: { image: imageHandler, video: videoHandler },
       },
       imageResize: {},
     }),
-    [imageHandler]
+    [imageHandler, videoHandler]
   );
 
   // 🔁 Content o‘zgarishini kuzatish
@@ -130,11 +169,42 @@ const QuillEditorComponent: React.FC<QuillEditorProps> = ({
       />
 
       <style>{`
+  .ql-toolbar.ql-snow {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 4px;
+  }
+
+  .ql-toolbar.ql-snow .ql-formats {
+    display: flex;
+    align-items: center;
+    margin-right: 6px;
+  }
+
+  .ql-toolbar.ql-snow button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .ql-custom-media {
     display: block;
     margin: 20px auto;
     width: 100%;
     max-width: 900px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .ql-video {
+    display: block;
+    margin: 20px auto;
+    width: 100%;
+    max-width: 800px;
+    aspect-ratio: 16 / 9;
     border-radius: 12px;
     overflow: hidden;
   }

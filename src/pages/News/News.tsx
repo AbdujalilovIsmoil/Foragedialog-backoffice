@@ -1,5 +1,5 @@
 import { CKEditor, Button } from "@/components";
-import { useState, useEffect, type ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useGet, usePost, usePut, useDelete } from "@/hooks";
 import {
   EyeOutlined,
@@ -23,6 +23,7 @@ import {
   Tag,
   Descriptions,
   Divider,
+  Spin,
 } from "antd";
 
 interface MultilangText {
@@ -73,27 +74,25 @@ const News: React.FC = () => {
   const [currentLang, setCurrentLang] = useState<keyof MultilangText>("uz");
   const [values, setValues] = useState<NewsValues>({ ...defaultValues });
   const [viewItem, setViewItem] = useState<NewsValues | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const [form] = Form.useForm();
 
-  // ✅ form va state sinxron ishlashi uchun
-  useEffect(() => {
-    form.setFieldsValue(values);
-  }, [values, form]);
-
-  // API hooks
   const { data: newsData, refetch: refetchNews } = useGet({
     path: "/News/GetAll",
     queryKey: "news",
   });
+
   const { data: categoriesData } = useGet({
     queryKey: "categories",
     path: "/NewsCategory/GetAll",
   });
+
   const { data: tagsData } = useGet({
     queryKey: "tags",
     path: "/Tags/GetAll",
   });
+
   const { data: publishersData } = useGet({
     queryKey: "publishers",
     path: "/Publisher/GetAll",
@@ -133,7 +132,7 @@ const News: React.FC = () => {
     },
   });
 
-  // 🧠 Input change
+  // inputlar uchun
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement>,
     field: keyof NewsValues,
@@ -145,117 +144,111 @@ const News: React.FC = () => {
         ...prev,
         [field]: { ...(prev[field] as MultilangText), [lang]: value },
       }));
-      form.setFieldsValue({
-        [field]: { ...(values[field] as MultilangText), [lang]: value },
-      });
     } else {
       setValues((prev) => ({ ...prev, [field]: value }));
-      form.setFieldsValue({ [field]: value });
     }
   };
 
-  // 🧠 Select change
   const handleSelectChange = (
     field: "categories" | "tags" | "publisherId",
     value: any
   ) => {
     setValues((prev) => ({ ...prev, [field]: value }));
-    form.setFieldsValue({ [field]: value });
   };
 
-  // 🖼 Upload image
+  // Rasm upload
   const handleImageUpload = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-
     try {
       const response = await fetch(
         import.meta.env.VITE_REACT_API_URL + "/File/Uploadfile",
         { method: "POST", body: formData }
       );
       const data = await response.json();
-      const contentId = data?.content?.id;
-      if (contentId) {
-        const updatedImages = [...values.images, contentId];
-        setValues((prev) => ({ ...prev, images: updatedImages }));
-        form.setFieldsValue({ images: updatedImages });
-        message.success(`${file.name} uploaded successfully`);
-      } else {
-        message.error(`${file.name} upload failed`);
+      const id = data?.content?.id;
+      if (id) {
+        const updated = [...values.images, id];
+        setValues((prev) => ({ ...prev, images: updated }));
+        message.success(`${file.name} uploaded`);
       }
     } catch {
       message.error(`${file.name} upload failed`);
     }
-
     return false;
   };
 
-  // 🗑 Remove image
   const handleImageRemove = (file: any) => {
-    const id = file.uid;
-    const updated = values.images.filter((imgId) => imgId !== id);
+    const updated = values.images.filter((id) => id !== file.uid);
     setValues((prev) => ({ ...prev, images: updated }));
-    form.setFieldsValue({ images: updated });
     return true;
   };
 
-  // 💾 Submit
+  // Submit
   const handleSubmit = () => {
-    if (values.id) {
-      putNews.mutate(values);
-    } else {
-      postNews.mutate(values);
+    if (values.id) putNews.mutate(values);
+    else postNews.mutate(values);
+  };
+
+  // Edit bosilganda GetById orqali olish
+  const openDrawerForEdit = async (record: any) => {
+    try {
+      setLoading(true);
+      const res = await fetch(
+        `${import.meta.env.VITE_REACT_API_URL}/News/GetById?id=${record.id}`
+      );
+      const data = await res.json();
+      const content = data?.content || data;
+
+      const updatedValues: NewsValues = {
+        id: content.id,
+        tagsIds: content.tagsIds || [],
+        categoriesIds: content.categoriesIds || [],
+        subject: content.subject || defaultValues.subject,
+        title: content.title || defaultValues.title,
+        text: content.text || defaultValues.text,
+        categories: content.categories?.map((c: any) => c.id) || [],
+        tags: content.tags?.map((t: any) => t.id) || [],
+        images: content.images || [],
+        readingTime: content.readingTime || "",
+        publishedDate: content.publishedDate || new Date().toISOString(),
+        publisherId: content.publisherId || 0,
+      };
+
+      setValues(updatedValues);
+      form.setFieldsValue(updatedValues);
+      setVisible(true);
+    } catch (err) {
+      message.error("❌ Ma'lumotni olishda xatolik yuz berdi");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ✏️ Edit
-  const openDrawerForEdit = (record: any) => {
-    const updatedValues: NewsValues = {
-      id: record.id,
-      tagsIds: record.tagsIds,
-      categoriesIds: record.categoriesIds,
-      subject:
-        typeof record.subject === "object"
-          ? record.subject
-          : { uz: record.subject || "", ru: "", en: "", ger: "" },
-      title:
-        typeof record.title === "object"
-          ? record.title
-          : { uz: record.title || "", ru: "", en: "", ger: "" },
-      text:
-        typeof record.text === "object"
-          ? record.text
-          : { uz: record.text || "", ru: "", en: "", ger: "" },
-      categories: Array.isArray(record.categories)
-        ? record.categories.map((c: any) => c?.id ?? c)
-        : [],
-      tags: Array.isArray(record.tags)
-        ? record.tags.map((t: any) => t?.id ?? t)
-        : [],
-      images: record.images || [],
-      readingTime: record.readingTime || "",
-      publishedDate: record.publishedDate || new Date().toISOString(),
-      publisherId: record.publisherId || 0,
-    };
-
-    setValues(updatedValues);
-    setVisible(true);
+  // View bosilganda GetById orqali olish
+  const openViewModal = async (record: DataType) => {
+    try {
+      setLoading(true);
+      const res = await fetch(
+        `${import.meta.env.VITE_REACT_API_URL}/News/GetById?id=${record.id}`
+      );
+      const data = await res.json();
+      const content = data?.content || data;
+      setViewItem(content);
+      setViewModalVisible(true);
+    } catch {
+      message.error("❌ Ma'lumotni olishda xatolik");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 👁 View
-  const openViewModal = (record: DataType) => {
-    setViewItem(record);
-    setViewModalVisible(true);
-  };
-
-  // ➕ Create
   const openCreateDrawer = () => {
     form.resetFields();
     setValues({ ...defaultValues });
     setVisible(true);
   };
 
-  // Table columns
   const columns = [
     { title: "ID", dataIndex: "id" },
     {
@@ -266,11 +259,7 @@ const News: React.FC = () => {
     {
       title: "View",
       render: (_: any, record: DataType) => (
-        <Button
-          type="default"
-          icon={<EyeOutlined />}
-          onClick={() => openViewModal(record)}
-        />
+        <Button icon={<EyeOutlined />} onClick={() => openViewModal(record)} />
       ),
     },
     {
@@ -288,7 +277,6 @@ const News: React.FC = () => {
       render: (_: any, record: DataType) => (
         <Button
           danger
-          type="default"
           icon={<DeleteOutlined />}
           onClick={() => deleteNews.mutate(`${record.id}`)}
         />
@@ -297,307 +285,258 @@ const News: React.FC = () => {
   ];
 
   return (
-    <div>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <Tabs
-          activeKey={currentLang}
-          onChange={(key) => setCurrentLang(key as keyof MultilangText)}
-          items={languages.map((lang) => ({
-            key: lang,
-            label: lang.toUpperCase(),
-          }))}
-        />
-        <Button type="primary" onClick={openCreateDrawer}>
-          Create News
-        </Button>
-      </div>
-
-      {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={(newsData || []).map((item: any) => ({
-          ...item,
-          key: item.id,
-        }))}
-        rowKey="key"
-        style={{ marginBottom: 16 }}
-      />
-
-      {/* Drawer (Create/Edit) */}
-      <Drawer
-        title={values.id ? "Edit News" : "Create News"}
-        placement="right"
-        width={900}
-        onClose={() => setVisible(false)}
-        open={visible}
-        bodyStyle={{ padding: 16, height: "100%" }}
-      >
-        <Tabs
-          activeKey={currentLang}
-          onChange={(key) => setCurrentLang(key as keyof MultilangText)}
-          items={languages.map((lang) => ({
-            key: lang,
-            label: lang.toUpperCase(),
-          }))}
-        />
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Row gutter={16}>
-            {/* Title */}
-            <Col span={24}>
-              <Form.Item
-                label="Title"
-                name={["title", currentLang]}
-                rules={[{ required: true, message: "Please enter the title" }]}
-              >
-                <Input
-                  onChange={(e) => handleInputChange(e, "title", currentLang)}
-                />
-              </Form.Item>
-            </Col>
-
-            {/* Text */}
-            <Col span={24}>
-              <Form.Item
-                label="Text"
-                name={["text", currentLang]}
-                rules={[{ required: true, message: "Please enter the text" }]}
-              >
-                <CKEditor
-                  key={currentLang}
-                  value={values.text[currentLang]}
-                  onChange={(data) =>
-                    setValues((prev) => ({
-                      ...prev,
-                      text: { ...prev.text, [currentLang]: data },
-                    }))
-                  }
-                />
-              </Form.Item>
-            </Col>
-
-            {/* Categories */}
-            <Col span={24}>
-              <Form.Item
-                label="Categories"
-                name="categories"
-                rules={[
-                  { required: true, message: "Please enter the categories" },
-                ]}
-              >
-                <Select
-                  mode="multiple"
-                  value={values.categories}
-                  onChange={(v) => handleSelectChange("categories", v)}
-                >
-                  {categoriesData?.map((c: any) => (
-                    <Select.Option key={c.id} value={c.id}>
-                      {c.categoryName?.[currentLang] || ""}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-
-            {/* Tags */}
-            <Col span={24}>
-              <Form.Item
-                label="Tags"
-                name="tags"
-                rules={[{ required: true, message: "Please enter the tags" }]}
-              >
-                <Select
-                  mode="multiple"
-                  value={values.tags}
-                  onChange={(v) => handleSelectChange("tags", v)}
-                >
-                  {tagsData?.map((t: any) => {
-                    const tagLabel =
-                      typeof t.tagName === "object"
-                        ? t.tagName[currentLang] || t.tagName.uz || "No name"
-                        : t.tagName || "No name";
-                    return (
-                      <Select.Option key={t.id} value={t.id}>
-                        {tagLabel}
-                      </Select.Option>
-                    );
-                  })}
-                </Select>
-              </Form.Item>
-            </Col>
-
-            {/* Publisher */}
-            <Col span={24}>
-              <Form.Item
-                label="Publisher"
-                name="publisherId"
-                rules={[
-                  { required: true, message: "Please enter the publisher" },
-                ]}
-              >
-                <Select
-                  value={values.publisherId}
-                  onChange={(v) => handleSelectChange("publisherId", v)}
-                >
-                  {publishersData?.map((p: any) => (
-                    <Select.Option key={p.id} value={p.id}>
-                      {p.name || ""}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-
-            {/* Images */}
-            <Col span={24}>
-              <Form.Item
-                label="Images"
-                name="images"
-                rules={[{ required: true, message: "Please upload an image" }]}
-              >
-                <Upload
-                  beforeUpload={handleImageUpload}
-                  onRemove={handleImageRemove}
-                  multiple
-                  listType="picture"
-                  fileList={values.images.map((id) => ({
-                    uid: id,
-                    name: id,
-                    url: `${
-                      import.meta.env.VITE_REACT_API_URL
-                    }/File/DownloadFile/download/${id}`,
-                  }))}
-                >
-                  <Button icon={<UploadOutlined />}>Upload Images</Button>
-                </Upload>
-              </Form.Item>
-            </Col>
-
-            {/* Date */}
-            <Col span={24}>
-              <Form.Item
-                label="Published Date"
-                name="publishedDate"
-                rules={[{ required: true, message: "Please enter the date" }]}
-              >
-                <Input
-                  type="datetime-local"
-                  value={
-                    values.publishedDate
-                      ? values.publishedDate.slice(0, 16)
-                      : ""
-                  }
-                  onChange={(e) => handleInputChange(e, "publishedDate")}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={24}>
-              <Button type="primary" htmlType="submit">
-                {values.id ? "Update Blog" : "Create Blog"}
-              </Button>
-            </Col>
-          </Row>
-        </Form>
-      </Drawer>
-
-      {/* View Modal */}
-      <Modal
-        open={viewModalVisible}
-        title={viewItem?.title?.[currentLang] || "Blog Details"}
-        footer={
-          <Button type="primary" onClick={() => setViewModalVisible(false)}>
-            Close
+    <Spin spinning={loading}>
+      <div>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <Tabs
+            activeKey={currentLang}
+            onChange={(key) => setCurrentLang(key as keyof MultilangText)}
+            items={languages.map((lang) => ({
+              key: lang,
+              label: lang.toUpperCase(),
+            }))}
+          />
+          <Button type="primary" onClick={openCreateDrawer}>
+            Create News
           </Button>
-        }
-        onCancel={() => setViewModalVisible(false)}
-        width={1000}
-        bodyStyle={{ padding: "24px" }}
-      >
-        {viewItem && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <Descriptions bordered column={2} size="middle">
-              <Descriptions.Item label="Title">
-                {viewItem.title?.[currentLang]}
-              </Descriptions.Item>
-              <Descriptions.Item label="Publisher" span={2}>
-                {
-                  publishersData?.find(
-                    (p: any) => p.id === viewItem.publisherId
-                  )?.name
-                }
-              </Descriptions.Item>
-              <Descriptions.Item label="Published Date">
-                {new Date(viewItem.publishedDate).toLocaleString()}
-              </Descriptions.Item>
-            </Descriptions>
+        </div>
 
-            <Divider orientation="left">Text</Divider>
-            <div
-              style={{
-                padding: 16,
-                border: "1px solid #f0f0f0",
-                borderRadius: 6,
-                backgroundColor: "#fafafa",
-                maxHeight: 300,
-                overflowY: "auto",
-              }}
-              dangerouslySetInnerHTML={{
-                __html: viewItem.text?.[currentLang] || "",
-              }}
+        {/* Table */}
+        <Table
+          columns={columns}
+          dataSource={(newsData || []).map((i: any) => ({
+            ...i,
+            key: i.id,
+          }))}
+          rowKey="key"
+        />
+
+        {/* Drawer (Create/Edit) */}
+        <Drawer
+          title={values.id ? "Edit News" : "Create News"}
+          open={visible}
+          onClose={() => setVisible(false)}
+          width={900}
+        >
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
+            <Tabs
+              activeKey={currentLang}
+              onChange={(key) => setCurrentLang(key as keyof MultilangText)}
+              items={languages.map((lang) => ({
+                key: lang,
+                label: lang.toUpperCase(),
+              }))}
             />
 
-            <Divider orientation="left">Categories & Tags</Divider>
-            <div style={{ marginBottom: 12 }}>
-              {(viewItem.categories || []).map((catId) => {
-                const cat = categoriesData?.find((c: any) => c.id === catId);
-                return (
-                  cat && (
-                    <Tag color="blue" key={catId}>
-                      {cat.categoryName?.[currentLang]}
-                    </Tag>
-                  )
-                );
-              })}
-            </div>
-            <div>
-              {(viewItem.tags || []).map((tagId) => {
-                const tag = tagsData?.find((t: any) => t.id === tagId);
-                return (
-                  tag && (
-                    <Tag color="green" key={tagId}>
-                      {tag.tagName?.[currentLang] || tag.name}
-                    </Tag>
-                  )
-                );
-              })}
-            </div>
+            <Row gutter={16}>
+              {/* Title */}
+              <Col span={24}>
+                <Form.Item
+                  label="Title"
+                  name={["title", currentLang]}
+                  rules={[{ required: true, message: "Enter title" }]}
+                >
+                  <Input
+                    onChange={(e) => handleInputChange(e, "title", currentLang)}
+                  />
+                </Form.Item>
+              </Col>
 
-            <Divider orientation="left">Images</Divider>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {viewItem.images?.map((id) => (
-                <Image
-                  key={id}
-                  width={140}
-                  height={100}
-                  style={{ objectFit: "cover", borderRadius: 6 }}
-                  src={`${
-                    import.meta.env.VITE_REACT_API_URL
-                  }/File/DownloadFile/download/${id}`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
+              {/* Text */}
+              <Col span={24}>
+                <Form.Item
+                  label="Text"
+                  name={["text", currentLang]}
+                  rules={[{ required: true, message: "Enter text" }]}
+                >
+                  <CKEditor
+                    key={currentLang}
+                    value={values.text[currentLang]}
+                    onChange={(data) =>
+                      setValues((prev) => ({
+                        ...prev,
+                        text: { ...prev.text, [currentLang]: data },
+                      }))
+                    }
+                  />
+                </Form.Item>
+              </Col>
+
+              {/* Categories */}
+              <Col span={24}>
+                <Form.Item label="Categories" name="categories" required>
+                  <Select
+                    mode="multiple"
+                    value={values.categories}
+                    onChange={(v) => handleSelectChange("categories", v)}
+                  >
+                    {categoriesData?.map((c: any) => (
+                      <Select.Option key={c.id} value={c.id}>
+                        {c.categoryName?.[currentLang]}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              {/* Tags */}
+              <Col span={24}>
+                <Form.Item label="Tags" name="tags" required>
+                  <Select
+                    mode="multiple"
+                    value={values.tags}
+                    onChange={(v) => handleSelectChange("tags", v)}
+                  >
+                    {tagsData?.map((t: any) => (
+                      <Select.Option key={t.id} value={t.id}>
+                        {t.tagName?.[currentLang] || t.tagName?.uz || "No name"}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              {/* Publisher */}
+              <Col span={24}>
+                <Form.Item label="Publisher" name="publisherId" required>
+                  <Select
+                    value={values.publisherId}
+                    onChange={(v) => handleSelectChange("publisherId", v)}
+                  >
+                    {publishersData?.map((p: any) => (
+                      <Select.Option key={p.id} value={p.id}>
+                        {p.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              {/* Images */}
+              <Col span={24}>
+                <Form.Item label="Images" name="images" required>
+                  <Upload
+                    beforeUpload={handleImageUpload}
+                    onRemove={handleImageRemove}
+                    multiple
+                    listType="picture"
+                    fileList={values.images.map((id) => ({
+                      uid: id,
+                      name: id,
+                      url: `${
+                        import.meta.env.VITE_REACT_API_URL
+                      }/File/DownloadFile/download/${id}`,
+                    }))}
+                  >
+                    <Button icon={<UploadOutlined />}>Upload</Button>
+                  </Upload>
+                </Form.Item>
+              </Col>
+
+              {/* Date */}
+              <Col span={24}>
+                <Form.Item label="Published Date" name="publishedDate" required>
+                  <Input
+                    type="datetime-local"
+                    value={values.publishedDate.slice(0, 16)}
+                    onChange={(e) => handleInputChange(e, "publishedDate")}
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col span={24}>
+                <Button type="primary" htmlType="submit">
+                  {values.id ? "Update" : "Create"}
+                </Button>
+              </Col>
+            </Row>
+          </Form>
+        </Drawer>
+
+        {/* View Modal */}
+        <Modal
+          open={viewModalVisible}
+          title={viewItem?.title?.[currentLang] || "Blog details"}
+          onCancel={() => setViewModalVisible(false)}
+          footer={
+            <Button onClick={() => setViewModalVisible(false)}>Close</Button>
+          }
+          width={900}
+        >
+          {viewItem && (
+            <>
+              <Descriptions bordered size="middle" column={2}>
+                <Descriptions.Item label="Title">
+                  {viewItem.title?.[currentLang]}
+                </Descriptions.Item>
+                <Descriptions.Item label="Publisher">
+                  {
+                    publishersData?.find(
+                      (p: any) => p.id === viewItem.publisherId
+                    )?.name
+                  }
+                </Descriptions.Item>
+                <Descriptions.Item label="Published">
+                  {new Date(viewItem.publishedDate).toLocaleString()}
+                </Descriptions.Item>
+              </Descriptions>
+
+              <Divider orientation="left">Text</Divider>
+              <div
+                style={{
+                  border: "1px solid #eee",
+                  borderRadius: 6,
+                  padding: 12,
+                  maxHeight: 300,
+                  overflowY: "auto",
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: viewItem.text?.[currentLang],
+                }}
+              />
+
+              <Divider orientation="left">Categories & Tags</Divider>
+              <div style={{ marginBottom: 12 }}>
+                {viewItem.categories?.map((id) => {
+                  const cat = categoriesData?.find((c: any) => c.id === id);
+                  return (
+                    <Tag color="blue" key={id}>
+                      {cat?.categoryName?.[currentLang]}
+                    </Tag>
+                  );
+                })}
+              </div>
+              <div>
+                {viewItem.tags?.map((id) => {
+                  const tag = tagsData?.find((t: any) => t.id === id);
+                  return (
+                    <Tag color="green" key={id}>
+                      {tag?.tagName?.[currentLang] || tag?.tagName?.uz}
+                    </Tag>
+                  );
+                })}
+              </div>
+
+              <Divider orientation="left">Images</Divider>
+              <div className="flex flex-wrap gap-3">
+                {viewItem.images?.map((id) => (
+                  <Image
+                    key={id}
+                    width={140}
+                    height={100}
+                    src={`${
+                      import.meta.env.VITE_REACT_API_URL
+                    }/File/DownloadFile/download/${id}`}
+                    style={{ objectFit: "cover", borderRadius: 6 }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </Modal>
+      </div>
+    </Spin>
   );
 };
 

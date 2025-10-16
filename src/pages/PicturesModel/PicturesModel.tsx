@@ -91,6 +91,7 @@ const PicturesModel: React.FC = () => {
     path: "/PicturesModel/Delete",
     successText: "Picture Deleted",
     onError: async (error: unknown) => {
+      console.log(error);
       if (error instanceof Error) toast.error(error.message);
     },
   });
@@ -231,15 +232,19 @@ const PicturesModel: React.FC = () => {
     },
     {
       title: "Delete",
-      render: (row: PicturesType) => (
-        <Button
-          type="text"
-          size="large"
-          onClick={() => mutateDelete.mutate(`${row.id}`)}
-        >
-          <DeleteOutlined style={{ color: "red" }} />
-        </Button>
-      ),
+      render: (row: PicturesType) => {
+        console.log(row);
+
+        return (
+          <Button
+            type="text"
+            size="large"
+            onClick={() => mutateDelete.mutate(`${row.id}`)}
+          >
+            <DeleteOutlined style={{ color: "red" }} />
+          </Button>
+        );
+      },
     },
   ];
 
